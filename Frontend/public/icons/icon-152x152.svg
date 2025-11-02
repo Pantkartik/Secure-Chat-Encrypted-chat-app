@@ -1,0 +1,38 @@
+<svg width="152" height="152" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      </linearGradient>
+      <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    
+    <!-- Background circle -->
+    <circle cx="76" cy="76" r="72" fill="url(#grad1)" stroke="#ffffff" stroke-width="2"/>
+    
+    <!-- Shield/Chat bubble shape -->
+    <path d="M 45.6 38 
+             L 106.39999999999999 38 
+             C 129.2 38 129.2 68.4 106.39999999999999 68.4 
+             L 76 68.4 
+             L 45.6 98.8 
+             L 45.6 68.4 
+             C 22.8 68.4 22.8 38 45.6 38 Z" 
+          fill="url(#grad2)" opacity="0.9"/>
+    
+    <!-- Lock/Security symbol -->
+    <rect x="60.800000000000004" y="83.60000000000001" width="30.400000000000002" height="22.8" fill="#ffffff" rx="2"/>
+    <path d="M 63.839999999999996 83.60000000000001 
+             L 63.839999999999996 76 
+             C 63.839999999999996 68.4 68.4 63.839999999999996 76 63.839999999999996 
+             C 83.60000000000001 63.839999999999996 88.16 68.4 88.16 76 
+             L 88.16 83.60000000000001 
+             M 69.92 79.04 
+             L 69.92 83.60000000000001 
+             M 82.08000000000001 79.04 
+             L 82.08000000000001 83.60000000000001" 
+          stroke="#ffffff" stroke-width="1.5" fill="none"/>
+  </svg>

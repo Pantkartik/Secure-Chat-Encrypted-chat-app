@@ -1,0 +1,387 @@
+@custom-variant dark (&:is(.dark *));
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+@import "tailwindcss";
+@import "tw-animate-css";
+
+
+:root {
+  /* WhatsApp/Signal-inspired color palette */
+  --background: #e5ddd5; /* WhatsApp chat background */
+  --foreground: #111b21; /* WhatsApp/Signal text */
+  --card: #ffffff; /* Message bubble background */
+  --card-foreground: #111b21;
+  --popover: #ffffff;
+  --popover-foreground: #111b21;
+  --primary: #25d366; /* WhatsApp green for sent messages */
+  --primary-foreground: #ffffff;
+  --secondary: #0088cc; /* Signal blue for sent messages */
+  --secondary-foreground: #ffffff;
+  --muted: #f0f0f0; /* Muted/received bubble */
+  --muted-foreground: #111b21;
+  --accent: #34b7f1; /* WhatsApp accent blue */
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #dadada;
+  --input: #ffffff;
+  --ring: #25d36680; /* WhatsApp green with opacity */
+  --chart-1: #25d366;
+  --chart-2: #0088cc;
+  --chart-3: #34b7f1;
+  --chart-4: #f0f0f0;
+  --chart-5: #dc2626;
+  --radius: 0.375rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #111b21;
+  --sidebar-primary: #25d366;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #0088cc;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #dadada;
+  --sidebar-ring: #25d36680;
+}
+
+.dark {
+  /* WhatsApp/Signal-inspired dark mode palette */
+  --background: #111b21; /* WhatsApp/Signal dark background */
+  --foreground: #e5ddd5; /* Light text */
+  --card: #222e35; /* Message bubble dark */
+  --card-foreground: #e5ddd5;
+  --popover: #222e35;
+  --popover-foreground: #e5ddd5;
+  --primary: #25d366; /* WhatsApp green for sent messages */
+  --primary-foreground: #111b21;
+  --secondary: #0088cc; /* Signal blue for sent messages */
+  --secondary-foreground: #e5ddd5;
+  --muted: #2a3942; /* Muted/received bubble dark */
+  --muted-foreground: #e5ddd5;
+  --accent: #34b7f1; /* WhatsApp accent blue */
+  --accent-foreground: #111b21;
+  --destructive: #dc2626;
+  --destructive-foreground: #e5ddd5;
+  --border: #222e35;
+  --input: #222e35;
+  --ring: #25d36680;
+  --chart-1: #25d366;
+  --chart-2: #0088cc;
+  --chart-3: #34b7f1;
+  --chart-4: #2a3942;
+  --chart-5: #dc2626;
+  --sidebar: #222e35;
+  --sidebar-foreground: #e5ddd5;
+  --sidebar-primary: #25d366;
+  --sidebar-primary-foreground: #e5ddd5;
+  --sidebar-accent: #0088cc;
+  --sidebar-accent-foreground: #e5ddd5;
+  --sidebar-border: #222e35;
+  --sidebar-ring: #25d36680;
+}
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Custom animations */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(5deg); }
+  }
+  
+  @keyframes float-delay {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-30px) rotate(-5deg); }
+  }
+  
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes fade-in-delay {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes fade-in-delay-2 {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-float-delay {
+    animation: float-delay 8s ease-in-out infinite;
+  }
+  
+  .animate-gradient {
+    animation: gradient 3s ease infinite;
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 1s ease-out;
+  }
+  
+  .animate-fade-in-delay {
+    animation: fade-in-delay 1.2s ease-out;
+  }
+  
+  .animate-fade-in-delay-2 {
+    animation: fade-in-delay-2 1.4s ease-out;
+  }
+  
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+    20%, 40%, 60%, 80% { transform: translateX(2px); }
+  }
+  
+  .animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+  
+  /* Video Call UI Styles */
+  .simple-peer-video-call {
+    @apply relative w-full h-full bg-gray-900 rounded-lg overflow-hidden;
+  }
+  
+  .video-grid {
+    @apply grid gap-2 p-2 h-[calc(100%-80px)];
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-auto-rows: minmax(200px, 1fr);
+  }
+  
+  .video-tile {
+    @apply relative rounded-lg overflow-hidden bg-gray-800;
+    aspect-ratio: 16/9;
+  }
+  
+  .video-tile.local {
+    @apply border-2 border-blue-500;
+  }
+  
+  .video-tile.remote {
+    @apply border border-gray-600;
+  }
+  
+  .video-element {
+    @apply w-full h-full object-cover;
+  }
+  
+  .video-overlay {
+    @apply absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3;
+  }
+  
+  .participant-name {
+    @apply text-white text-sm font-medium;
+  }
+  
+  .video-disabled-indicator {
+    @apply absolute inset-0 flex flex-col items-center justify-center bg-gray-800 text-white;
+    background: linear-gradient(135deg, #2d3748, #1a202c);
+  }
+  
+  .audio-disabled-indicator {
+    @apply absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 text-xs;
+  }
+  
+  .connection-indicator {
+    @apply absolute top-2 left-2 rounded-full p-1 text-xs;
+  }
+  
+  .connection-indicator.poor {
+    @apply bg-yellow-600 text-white;
+  }
+  
+  .connection-indicator.disconnected {
+    @apply bg-red-600 text-white;
+  }
+  
+  .video-placeholder {
+    @apply flex items-center justify-center h-full bg-gray-700;
+  }
+  
+  .loading-spinner {
+    @apply text-white text-sm;
+  }
+  
+  .call-controls {
+    @apply absolute bottom-0 left-0 right-0 bg-gray-900/90 border-t border-gray-700 p-4;
+    backdrop-filter: blur(10px);
+    background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.7));
+  }
+  
+  .call-info {
+    @apply flex items-center justify-center mb-3;
+  }
+  
+  .call-duration {
+    @apply text-white text-sm font-mono bg-black/30 px-3 py-1 rounded-full;
+  }
+  
+  .control-buttons {
+    @apply flex items-center justify-center space-x-6 mb-3;
+  }
+  
+  .control-button {
+    @apply w-14 h-14 rounded-full flex items-center justify-center text-lg transition-all duration-200 shadow-lg;
+    background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  
+  .control-button:hover {
+    @apply transform scale-110;
+    background: linear-gradient(145deg, rgba(255,255,255,0.15), rgba(255,255,255,0.1));
+  }
+  
+  .control-button:active {
+    @apply transform scale-95;
+  }
+  
+  .control-button.video-toggle {
+    @apply text-white;
+  }
+  
+  .control-button.video-toggle:not(.disabled) {
+    background: linear-gradient(145deg, #4CAF50, #45a049);
+  }
+  
+  .control-button.video-toggle.disabled {
+    background: linear-gradient(145deg, #f44336, #d32f2f);
+  }
+  
+  .control-button.audio-toggle {
+    @apply text-white;
+  }
+  
+  .control-button.audio-toggle:not(.disabled) {
+    background: linear-gradient(145deg, #4CAF50, #45a049);
+  }
+  
+  .control-button.audio-toggle.disabled {
+    background: linear-gradient(145deg, #f44336, #d32f2f);
+  }
+  
+  .control-button.end-call {
+    background: linear-gradient(145deg, #f44336, #d32f2f);
+    @apply text-white;
+  }
+  
+  .control-button.end-call:hover {
+    background: linear-gradient(145deg, #ff5252, #ff1744);
+  }
+  
+  .control-button:disabled {
+    @apply opacity-50 cursor-not-allowed transform-none;
+    background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  }
+  
+  .call-actions {
+    @apply flex items-center justify-center;
+  }
+  
+  .start-call-button {
+    @apply bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-lg transition-colors duration-200;
+  }
+  
+  .start-call-button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  
+  .calling-indicator {
+    @apply flex items-center space-x-2 text-white;
+  }
+  
+  .calling-indicator button {
+    @apply bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-sm;
+  }
+  
+  .error-message {
+    @apply absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 z-50;
+  }
+  
+  .error-message button {
+    @apply text-white hover:text-gray-200;
+  }
+  
+  .incoming-call {
+    @apply absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-3 rounded-lg flex items-center space-x-3 z-50;
+  }
+  
+  .incoming-call button {
+    @apply bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-sm;
+  }
+  
+  .incoming-call button:last-child {
+    @apply bg-red-600 hover:bg-red-500;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .video-grid {
+      grid-template-columns: 1fr;
+      grid-auto-rows: minmax(150px, 1fr);
+    }
+    
+    .call-controls {
+      @apply p-3;
+    }
+    
+    .control-button {
+      @apply w-10 h-10 text-base;
+    }
+  }
+}
