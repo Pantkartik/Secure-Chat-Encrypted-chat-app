@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connection Debug Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .connection-params {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+    </style>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Connection Debug Tool</h1>
+        <p>Comprehensive testing tool for Cypher Chat application</p>
+        
+        <div class="test-section">
+            <h2>📋 Connection Configuration</h2>
+            <div class="connection-params">
+                <label>Backend URL:</label>
+                <input type="text" id="backendUrl" value="http://localhost:3001" style="width: 200px;">
+                <label>Session ID:</label>
+                <input type="text" id="sessionId" value="TEST123" style="width: 100px;">
+                <label>Username:</label>
+                <input type="text" id="username" value="DebugUser" style="width: 120px;">
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🌐 HTTP Connection Tests</h2>
+            <button onclick="testHealth()">Test Health Endpoint</button>
+            <button onclick="testSessionAPI()">Test Session API</button>
+            <button onclick="testCORS()">Test CORS</button>
+            <div id="httpResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔌 Socket.IO Connection Tests</h2>
+            <button onclick="testSocketConnection()">Test Socket Connection</button>
+            <button onclick="joinSession()">Join Session</button>
+            <button onclick="sendTestMessage()">Send Test Message</button>
+            <button onclick="disconnectSocket()">Disconnect Socket</button>
+            <div id="socketResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Connection Status</h2>
+            <div id="connectionStatus" class="status info">Not connected</div>
+            <div id="socketStatus" class="status info">Socket: Disconnected</div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 Debug Log</h2>
+            <div id="debugLog" class="log">Ready to test connections...</div>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let currentSession = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
+            logDiv.innerHTML += `[${timestamp}] <span style="color: ${color}">${message}</span>\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+
+        function clearLog() {
+            document.getElementById('debugLog').innerHTML = 'Log cleared...\n';
+        }
+
+        async function testHealth() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const resultsDiv = document.getElementById('httpResults');
+            
+            try {
+                log(`Testing health endpoint: ${backendUrl}/health`);
+                const response = await fetch(`${backendUrl}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultsDiv.innerHTML = `<div class="status success">✅ Health Check: ${data.status} (${response.status})</div>`;
+                    log(`Health check successful: ${data.status}`, 'success');
+                } else {
+                    resultsDiv.innerHTML = `<div class="status error">❌ Health Check Failed: ${response.status}</div>`;
+                    log(`Health check failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="status error">❌ Health Check Error: ${error.message}</div>`;
+                log(`Health check error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSessionAPI() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const resultsDiv = document.getElementById('httpResults');
+            
+            try {
+                log(`Testing session API: ${backendUrl}/api/session`);
+                const response = await fetch(`${backendUrl}/api/session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ sessionId: 'DEBUG123' })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultsDiv.innerHTML += `<div class="status success">✅ Session API: ${data.message} (${response.status})</div>`;
+                    log(`Session API successful: ${data.message}`, 'success');
+                } else {
+                    resultsDiv.innerHTML += `<div class="status error">❌ Session API Failed: ${response.status}</div>`;
+                    log(`Session API failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                resultsDiv.innerHTML += `<div class="status error">❌ Session API Error: ${error.message}</div>`;
+                log(`Session API error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCORS() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const resultsDiv = document.getElementById('httpResults');
+            
+            try {
+                log(`Testing CORS preflight request`);
+                const response = await fetch(`${backendUrl}/health`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'content-type'
+                    }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                };
+                
+                resultsDiv.innerHTML += `<div class="status success">✅ CORS Headers: ${JSON.stringify(corsHeaders, null, 2)}</div>`;
+                log(`CORS test completed`, 'success');
+            } catch (error) {
+                resultsDiv.innerHTML += `<div class="status error">❌ CORS Error: ${error.message}</div>`;
+                log(`CORS error: ${error.message}`, 'error');
+            }
+        }
+
+        function testSocketConnection() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const resultsDiv = document.getElementById('socketResults');
+            
+            if (socket) {
+                socket.disconnect();
+            }
+            
+            log(`Testing Socket.IO connection to: ${backendUrl}`);
+            updateStatus('socketStatus', 'Socket: Connecting...', 'warning');
+            
+            socket = io(backendUrl, {
+                transports: ['websocket', 'polling'],
+                timeout: 10000,
+                reconnectionAttempts: 3
+            });
+
+            socket.on('connect', () => {
+                updateStatus('socketStatus', `Socket: Connected (${socket.id})`, 'success');
+                resultsDiv.innerHTML = `<div class="status success">✅ Socket.IO Connected: ${socket.id}</div>`;
+                log(`Socket connected successfully: ${socket.id}`, 'success');
+                updateStatus('connectionStatus', 'Connected to backend', 'success');
+            });
+
+            socket.on('connect_error', (error) => {
+                updateStatus('socketStatus', 'Socket: Connection Failed', 'error');
+                resultsDiv.innerHTML = `<div class="status error">❌ Socket.IO Error: ${error.message}</div>`;
+                log(`Socket connection error: ${error.message}`, 'error');
+                updateStatus('connectionStatus', 'Connection failed', 'error');
+            });
+
+            socket.on('disconnect', (reason) => {
+                updateStatus('socketStatus', `Socket: Disconnected (${reason})`, 'error');
+                log(`Socket disconnected: ${reason}`, 'warning');
+                if (reason === 'io server disconnect') {
+                    updateStatus('connectionStatus', 'Server disconnected', 'error');
+                }
+            });
+
+            socket.on('error', (error) => {
+                updateStatus('socketStatus', 'Socket: Error occurred', 'error');
+                log(`Socket error: ${error}`, 'error');
+            });
+
+            socket.on('reconnect_attempt', (attemptNumber) => {
+                log(`Socket reconnection attempt ${attemptNumber}`, 'warning');
+            });
+        }
+
+        function joinSession() {
+            if (!socket || !socket.connected) {
+                alert('Socket not connected. Please connect first.');
+                return;
+            }
+            
+            const sessionId = document.getElementById('sessionId').value;
+            const username = document.getElementById('username').value;
+            
+            currentSession = sessionId;
+            log(`Joining session: ${sessionId} as ${username}`);
+            
+            socket.emit('joinSession', { sessionId, username });
+            
+            socket.on('sessionJoined', (data) => {
+                log(`Session joined successfully: ${data.message}`, 'success');
+                updateStatus('connectionStatus', `In session: ${sessionId}`, 'success');
+            });
+
+            socket.on('userJoined', (data) => {
+                log(`User joined: ${data.name}`, 'info');
+            });
+
+            socket.on('userLeft', (data) => {
+                log(`User left: ${data.name}`, 'warning');
+            });
+
+            socket.on('userCountUpdate', (count) => {
+                log(`User count: ${count}`, 'info');
+            });
+        }
+
+        function sendTestMessage() {
+            if (!socket || !socket.connected || !currentSession) {
+                alert('Socket not connected or no session joined.');
+                return;
+            }
+            
+            const message = {
+                id: Date.now().toString(),
+                text: 'Test message from debug tool',
+                sender: document.getElementById('username').value,
+                timestamp: new Date().toISOString()
+            };
+            
+            log(`Sending test message: ${message.text}`);
+            socket.emit('sendMessage', { sessionId: currentSession, message });
+            
+            socket.on('messageReceived', (data) => {
+                log(`Message received: ${data.text} from ${data.sender}`, 'success');
+            });
+        }
+
+        function disconnectSocket() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                updateStatus('socketStatus', 'Socket: Disconnected', 'info');
+                updateStatus('connectionStatus', 'Disconnected', 'info');
+                log('Socket disconnected manually', 'warning');
+            }
+        }
+
+        // Auto-test on page load
+        window.onload = function() {
+            log('Debug tool loaded, ready for testing');
+        };
+    </script>
+</body>
+</html>

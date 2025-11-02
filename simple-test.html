@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        #console { background: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+    </style>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>🔍 Simple Connection Test</h1>
+    
+    <div id="status" class="status info">Ready to test...</div>
+    <div id="console"></div>
+    
+    <button onclick="testHTTP()">Test HTTP Connection</button>
+    <button onclick="testSocket()">Test Socket Connection</button>
+    <button onclick="testFullFlow()">Test Full Flow</button>
+    <button onclick="clearConsole()">Clear Console</button>
+
+    <script>
+        const CONSOLE = document.getElementById('console');
+        const STATUS = document.getElementById('status');
+        const BACKEND_URL = 'http://localhost:3001';
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            CONSOLE.innerHTML += `[${timestamp}] ${message}<br>`;
+            CONSOLE.scrollTop = CONSOLE.scrollHeight;
+            
+            if (type === 'error') {
+                STATUS.className = 'status error';
+                STATUS.textContent = `❌ ${message}`;
+            } else if (type === 'success') {
+                STATUS.className = 'status success';
+                STATUS.textContent = `✅ ${message}`;
+            } else {
+                STATUS.className = 'status info';
+                STATUS.textContent = `ℹ️ ${message}`;
+            }
+        }
+
+        function clearConsole() {
+            CONSOLE.innerHTML = '';
+            log('Console cleared');
+        }
+
+        async function testHTTP() {
+            log('Testing HTTP connection to backend...');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ HTTP Test PASSED: ${data.status}`, 'success');
+                    log(`📊 Backend timestamp: ${data.timestamp}`);
+                } else {
+                    log(`❌ HTTP Test FAILED: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ HTTP Connection ERROR: ${error.message}`, 'error');
+                log(`🔍 Make sure backend is running on ${BACKEND_URL}`);
+            }
+        }
+
+        function testSocket() {
+            log('Testing Socket.IO connection...');
+            
+            try {
+                const socket = io(BACKEND_URL, {
+                    transports: ['websocket', 'polling'],
+                    timeout: 5000
+                });
+
+                socket.on('connect', () => {
+                    log(`✅ Socket Connected: ID=${socket.id}`, 'success');
+                    log('🔌 Socket connection established successfully!');
+                    
+                    // Test a simple ping
+                    socket.emit('ping', { test: 'data' });
+                    log('📤 Sent ping to server');
+                });
+
+                socket.on('connect_error', (error) => {
+                    log(`❌ Socket Connection ERROR: ${error.message}`, 'error');
+                    log(`🔍 Error details: ${JSON.stringify(error)}`);
+                });
+
+                socket.on('disconnect', (reason) => {
+                    log(`⚠️ Socket Disconnected: ${reason}`, 'error');
+                });
+
+                socket.on('pong', (data) => {
+                    log(`📥 Received pong from server: ${JSON.stringify(data)}`, 'success');
+                });
+
+                // Auto-disconnect after 10 seconds for testing
+                setTimeout(() => {
+                    if (socket.connected) {
+                        socket.disconnect();
+                        log('✅ Socket test completed, disconnected');
+                    }
+                }, 10000);
+
+            } catch (error) {
+                log(`❌ Socket.IO ERROR: ${error.message}`, 'error');
+            }
+        }
+
+        async function testFullFlow() {
+            log('🚀 Testing FULL connection flow...');
+            
+            // Step 1: Test HTTP
+            log('Step 1: Testing HTTP connection...');
+            try {
+                const healthResponse = await fetch(`${BACKEND_URL}/health`);
+                if (!healthResponse.ok) {
+                    throw new Error(`Health check failed: ${healthResponse.status}`);
+                }
+                const healthData = await healthResponse.json();
+                log(`✅ Health check passed: ${healthData.status}`);
+            } catch (error) {
+                log(`❌ Step 1 FAILED: ${error.message}`, 'error');
+                return;
+            }
+
+            // Step 2: Test Session Creation
+            log('Step 2: Testing session creation...');
+            try {
+                const sessionResponse = await fetch(`${BACKEND_URL}/api/session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: 'TESTFLOW123' })
+                });
+                if (!sessionResponse.ok) {
+                    throw new Error(`Session creation failed: ${sessionResponse.status}`);
+                }
+                const sessionData = await sessionResponse.json();
+                log(`✅ Session created: ${sessionData.sessionId}`);
+            } catch (error) {
+                log(`❌ Step 2 FAILED: ${error.message}`, 'error');
+                return;
+            }
+
+            // Step 3: Test Socket Connection
+            log('Step 3: Testing Socket.IO connection...');
+            return new Promise((resolve) => {
+                const socket = io(BACKEND_URL, {
+                    transports: ['websocket', 'polling'],
+                    timeout: 5000
+                });
+
+                socket.on('connect', () => {
+                    log(`✅ Socket connected: ${socket.id}`);
+                    
+                    // Step 4: Test Session Join
+                    log('Step 4: Testing session join...');
+                    socket.emit('joinSession', { 
+                        sessionId: 'TESTFLOW123', 
+                        username: 'TestUser' 
+                    });
+                    
+                    socket.on('sessionJoined', (data) => {
+                        log(`✅ Session joined: ${data.message}`, 'success');
+                        log('🎉 FULL FLOW TEST COMPLETED SUCCESSFULLY!', 'success');
+                        socket.disconnect();
+                        resolve();
+                    });
+
+                    socket.on('joinSessionError', (error) => {
+                        log(`❌ Session join failed: ${error.message}`, 'error');
+                        socket.disconnect();
+                        resolve();
+                    });
+                });
+
+                socket.on('connect_error', (error) => {
+                    log(`❌ Step 3 FAILED: ${error.message}`, 'error');
+                    resolve();
+                });
+            });
+        }
+
+        // Auto-run basic tests on page load
+        window.onload = function() {
+            log('Connection test tool loaded');
+            log(`Backend URL: ${BACKEND_URL}`);
+            log('Click buttons above to run specific tests');
+        };
+    </script>
+</body>
+</html>

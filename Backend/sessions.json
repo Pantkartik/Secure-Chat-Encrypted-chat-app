@@ -1601,6 +1601,63 @@
       "createdAt": "2025-11-02T17:08:42.916Z",
       "messages": [],
       "users": []
+    },
+    "2DB2D762": {
+      "id": "2DB2D762",
+      "createdAt": "2025-11-02T17:42:39.911Z",
+      "messages": [],
+      "users": [
+        {
+          "id": "gE8WVS0NFnGCfaRZAAAB",
+          "name": "GitHub User",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "FB404A3F": {
+      "id": "FB404A3F",
+      "createdAt": "2025-11-02T17:48:31.639Z",
+      "messages": [],
+      "users": []
+    },
+    "7C386B80": {
+      "id": "7C386B80",
+      "createdAt": "2025-11-02T17:56:34.077Z",
+      "messages": [],
+      "users": [
+        {
+          "id": "RcNKiSogzu6nfdb2AAAB",
+          "name": "Google User",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "C9F4ACF7": {
+      "id": "C9F4ACF7",
+      "createdAt": "2025-11-02T17:58:35.245Z",
+      "messages": [],
+      "users": []
+    },
+    "79E89A32": {
+      "id": "79E89A32",
+      "createdAt": "2025-11-02T18:01:44.727Z",
+      "messages": [],
+      "users": []
+    },
+    "000E96BD": {
+      "id": "000E96BD",
+      "createdAt": "2025-11-02T18:29:13.745Z",
+      "messages": [],
+      "users": [
+        {
+          "id": "6_cSH8V3ohHrE_wEAAAG",
+          "name": "Google User",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
     }
   },
   "userSessions": {

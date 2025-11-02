@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connection Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Connection Test</h1>
+    <div id="status">Testing connection...</div>
+    <div id="logs"></div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const logsDiv = document.getElementById('logs');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logsDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            console.log(message);
+        }
+        
+        async function testConnection() {
+            try {
+                // Test HTTP connection first
+                log('Testing HTTP connection to http://localhost:3001...');
+                const response = await fetch('http://localhost:3001/health');
+                const data = await response.json();
+                log(`HTTP Response: ${JSON.stringify(data)}`);
+                
+                if (data.status === 'healthy') {
+                    statusDiv.innerHTML = '<span style="color: green;">✓ HTTP Connection Successful</span>';
+                } else {
+                    statusDiv.innerHTML = '<span style="color: red;">✗ HTTP Connection Failed</span>';
+                }
+                
+                // Test Socket.IO connection
+                log('Testing Socket.IO connection...');
+                const socket = io('http://localhost:3001', {
+                    transports: ['websocket', 'polling'],
+                    timeout: 5000
+                });
+                
+                socket.on('connect', () => {
+                    log('✓ Socket.IO Connected Successfully');
+                    statusDiv.innerHTML += '<br><span style="color: green;">✓ Socket.IO Connection Successful</span>';
+                    
+                    // Test joining a session
+                    log('Testing session join...');
+                    socket.emit('joinSession', { sessionId: 'TEST123', username: 'TestUser' });
+                });
+                
+                socket.on('connect_error', (error) => {
+                    log(`✗ Socket.IO Connection Error: ${error.message}`);
+                    statusDiv.innerHTML += '<br><span style="color: red;">✗ Socket.IO Connection Failed</span>';
+                });
+                
+                socket.on('disconnect', (reason) => {
+                    log(`Socket.IO Disconnected: ${reason}`);
+                });
+                
+                socket.on('usersList', (users) => {
+                    log(`Received users list: ${JSON.stringify(users)}`);
+                    socket.disconnect();
+                });
+                
+            } catch (error) {
+                log(`✗ Connection Error: ${error.message}`);
+                statusDiv.innerHTML = '<span style="color: red;">✗ Connection Failed</span>';
+            }
+        }
+        
+        // Run test when page loads
+        testConnection();
+    </script>
+</body>
+</html>

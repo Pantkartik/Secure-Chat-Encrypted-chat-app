@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        pre { background-color: #f8f9fa; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>CORS Detailed Test</h1>
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+        const backendUrl = 'http://localhost:3001';
+
+        function addResult(title, success, details) {
+            const div = document.createElement('div');
+            div.className = `test ${success ? 'success' : 'error'}`;
+            div.innerHTML = `
+                <h3>${title}: ${success ? '✅ SUCCESS' : '❌ FAILED'}</h3>
+                <pre>${JSON.stringify(details, null, 2)}</pre>
+            `;
+            results.appendChild(div);
+        }
+
+        async function testCors() {
+            // Test 1: Simple GET request
+            try {
+                console.log('Testing simple GET request...');
+                const response = await fetch(`${backendUrl}/health`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                addResult('Simple GET', true, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries()),
+                    data: data
+                });
+            } catch (error) {
+                addResult('Simple GET', false, {
+                    error: error.message,
+                    name: error.name,
+                    stack: error.stack
+                });
+            }
+
+            // Test 2: POST with preflight
+            try {
+                console.log('Testing POST with preflight...');
+                const response = await fetch(`${backendUrl}/api/session`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Custom-Header': 'test-value'
+                    },
+                    body: JSON.stringify({ test: 'data' })
+                });
+                
+                const data = await response.json();
+                addResult('POST with Preflight', true, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries()),
+                    data: data
+                });
+            } catch (error) {
+                addResult('POST with Preflight', false, {
+                    error: error.message,
+                    name: error.name,
+                    stack: error.stack
+                });
+            }
+
+            // Test 3: Check what the browser sees
+            try {
+                console.log('Testing browser network info...');
+                const response = await fetch(`${backendUrl}/health`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                addResult('Browser Network Info', true, {
+                    url: response.url,
+                    redirected: response.redirected,
+                    type: response.type,
+                    status: response.status,
+                    ok: response.ok,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
+            } catch (error) {
+                addResult('Browser Network Info', false, {
+                    error: error.message,
+                    errorString: error.toString()
+                });
+            }
+        }
+
+        // Run tests
+        testCors();
+    </script>
+</body>
+</html>

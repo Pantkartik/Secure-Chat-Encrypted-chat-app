@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Chat Connection</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .error { background-color: #ffebee; border-color: #f44336; }
+        .success { background-color: #e8f5e8; border-color: #4caf50; }
+        .info { background-color: #e3f2fd; border-color: #2196f3; }
+        button { margin: 5px; padding: 10px; }
+        input { margin: 5px; padding: 8px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>Debug Chat Connection</h1>
+    <div>
+        <input type="text" id="sessionId" placeholder="Session ID" value="TEST123">
+        <input type="text" id="username" placeholder="Username" value="DebugUser">
+        <button onclick="testConnection()">Test Connection</button>
+        <button onclick="clearLogs()">Clear Logs</button>
+    </div>
+    <div id="logs"></div>
+    
+    <script>
+        const logsDiv = document.getElementById('logs');
+        let socket = null;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.createElement('div');
+            logDiv.className = `log ${type}`;
+            logDiv.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            logsDiv.appendChild(logDiv);
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function clearLogs() {
+            logsDiv.innerHTML = '';
+        }
+        
+        async function testHTTPConnection() {
+            log('Testing HTTP connection to backend...', 'info');
+            try {
+                const response = await fetch('http://localhost:3001/health');
+                const data = await response.json();
+                log(`✓ HTTP Connection Successful: ${JSON.stringify(data)}`, 'success');
+                return true;
+            } catch (error) {
+                log(`✗ HTTP Connection Failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testSessionCreation() {
+            log('Testing session creation...', 'info');
+            try {
+                const response = await fetch('http://localhost:3001/api/session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                log(`✓ Session Creation Successful: ${JSON.stringify(data)}`, 'success');
+                return data.sessionId;
+            } catch (error) {
+                log(`✗ Session Creation Failed: ${error.message}`, 'error');
+                return null;
+            }
+        }
+        
+        function testSocketConnection(sessionId, username) {
+            log(`Testing Socket.IO connection to http://localhost:3001...`, 'info');
+            
+            // Close existing socket
+            if (socket) {
+                socket.disconnect();
+            }
+            
+            // Create new socket with detailed configuration
+            socket = io('http://localhost:3001', {
+                transports: ['websocket', 'polling'],
+                timeout: 10000,
+                forceNew: true,
+                reconnectionAttempts: 3,
+                reconnectionDelay: 1000
+            });
+            
+            socket.on('connect', () => {
+                log(`✓ Socket.IO Connected Successfully (ID: ${socket.id})`, 'success');
+                
+                // Test joining session
+                log(`Attempting to join session ${sessionId} as ${username}...`, 'info');
+                socket.emit('joinSession', { sessionId, username });
+            });
+            
+            socket.on('connect_error', (error) => {
+                log(`✗ Socket.IO Connection Error: ${error.message}`, 'error');
+                log(`Error details: ${JSON.stringify(error)}`, 'error');
+            });
+            
+            socket.on('connect_timeout', () => {
+                log('✗ Socket.IO Connection Timeout', 'error');
+            });
+            
+            socket.on('disconnect', (reason) => {
+                log(`Socket.IO Disconnected: ${reason}`, 'info');
+            });
+            
+            socket.on('reconnect_attempt', (attemptNumber) => {
+                log(`Socket.IO Reconnection attempt ${attemptNumber}`, 'info');
+            });
+            
+            socket.on('usersList', (users) => {
+                log(`✓ Received users list: ${JSON.stringify(users)}`, 'success');
+                log('Connection test completed successfully!', 'success');
+            });
+            
+            socket.on('error', (error) => {
+                log(`Socket.IO Error: ${error}`, 'error');
+            });
+        }
+        
+        async function testConnection() {
+            clearLogs();
+            
+            const sessionId = document.getElementById('sessionId').value || 'TEST123';
+            const username = document.getElementById('username').value || 'DebugUser';
+            
+            log(`Starting connection test with Session ID: ${sessionId}, Username: ${username}`, 'info');
+            
+            // Test HTTP first
+            const httpSuccess = await testHTTPConnection();
+            if (!httpSuccess) {
+                log('HTTP connection failed. Cannot proceed with Socket.IO test.', 'error');
+                return;
+            }
+            
+            // Test session creation
+            const newSessionId = await testSessionCreation();
+            const finalSessionId = newSessionId || sessionId;
+            
+            if (newSessionId) {
+                document.getElementById('sessionId').value = newSessionId;
+                log(`Using newly created session: ${newSessionId}`, 'info');
+            }
+            
+            // Test Socket.IO connection
+            testSocketConnection(finalSessionId, username);
+        }
+        
+        // Auto-test on page load
+        window.onload = function() {
+            log('Debug page loaded. Click "Test Connection" to start debugging.', 'info');
+        };
+    </script>
+</body>
+</html>

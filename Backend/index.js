@@ -10,9 +10,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
+  },
+  transports: ['websocket', 'polling']
 });
 
 /** Enable CORS for all routes */
@@ -26,7 +29,11 @@ app.use(cors({
     'https://your-frontend-domain.com',
     'https://cypherchat-backend.loca.lt'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 app.use(express.json());
@@ -450,7 +457,7 @@ io.on('connection', (socket) => {
 
 // Start the server only if this file is run directly (not imported)
 if (require.main === module) {
-  const port = 3001;
+  const port = process.env.PORT || 3001;
   server.listen(port, () => {
     console.log(`Backend server is running on port ${port}`);
   });

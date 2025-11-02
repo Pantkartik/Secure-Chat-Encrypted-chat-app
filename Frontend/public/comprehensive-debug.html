@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Connection Debug</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        .info { background: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        .log-entry { margin: 5px 0; padding: 8px; border-radius: 3px; font-family: monospace; font-size: 12px; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .status-connected { background: #28a745; }
+        .status-disconnected { background: #dc3545; }
+        .status-connecting { background: #ffc107; }
+        button { padding: 10px 15px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        input, textarea { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; width: 200px; }
+        .network-info { background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .test-results { max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Comprehensive Connection Debug</h1>
+        <p>This page will help identify the exact connection issue step by step.</p>
+
+        <div class="test-section">
+            <h3>📊 System Information</h3>
+            <div id="system-info" class="network-info"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔗 Step 1: HTTP Connection Test</h3>
+            <button onclick="testHttpConnection()" class="btn-primary">Test HTTP Connection</button>
+            <div id="http-results" class="test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>⚡ Step 2: Socket.IO Connection Test</h3>
+            <button onclick="testSocketIOConnection()" class="btn-success">Test Socket.IO Connection</button>
+            <button onclick="disconnectSocket()" class="btn-danger">Disconnect</button>
+            <div id="socket-status" class="network-info">
+                <span id="connection-status" class="status-indicator status-disconnected"></span>
+                <span id="connection-text">Disconnected</span>
+            </div>
+            <div id="socket-results" class="test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>💬 Step 3: Session Test</h3>
+            <input type="text" id="session-id" placeholder="Session ID" value="TEST123">
+            <input type="text" id="username" placeholder="Username" value="DebugUser">
+            <button onclick="joinSession()" class="btn-warning">Join Session</button>
+            <button onclick="sendTestMessage()" class="btn-primary">Send Test Message</button>
+            <div id="session-results" class="test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🌐 Network Diagnostics</h3>
+            <button onclick="runNetworkDiagnostics()" class="btn-info">Run Network Diagnostics</button>
+            <div id="network-results" class="test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Complete Test Log</h3>
+            <button onclick="clearLogs()" class="btn-danger">Clear Logs</button>
+            <div id="complete-log" class="test-results"></div>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let currentSessionId = null;
+        let currentUsername = null;
+
+        // System information
+        function displaySystemInfo() {
+            const info = {
+                'User Agent': navigator.userAgent,
+                'Platform': navigator.platform,
+                'Language': navigator.language,
+                'Cookies Enabled': navigator.cookieEnabled,
+                'Online Status': navigator.onLine,
+                'Current URL': window.location.href,
+                'Protocol': window.location.protocol,
+                'Hostname': window.location.hostname,
+                'Port': window.location.port,
+                'Timestamp': new Date().toISOString()
+            };
+
+            const infoHtml = Object.entries(info).map(([key, value]) => 
+                `<strong>${key}:</strong> ${value}<br>`
+            ).join('');
+            
+            document.getElementById('system-info').innerHTML = infoHtml;
+            log('System info displayed', 'info');
+        }
+
+        // HTTP Connection Test
+        async function testHttpConnection() {
+            const results = document.getElementById('http-results');
+            results.innerHTML = '';
+            
+            const tests = [
+                { name: 'Health Check', url: 'http://localhost:3001/health' },
+                { name: 'Session Creation', url: 'http://localhost:3001/api/session', method: 'POST' },
+                { name: 'CORS Test', url: 'http://localhost:3001/api/session', method: 'POST', testCors: true }
+            ];
+
+            for (const test of tests) {
+                try {
+                    log(`Testing: ${test.name}`, 'info');
+                    results.innerHTML += `<div class="log-entry info">Testing: ${test.name}</div>`;
+                    
+                    const options = test.method ? { method: test.method } : {};
+                    const response = await fetch(test.url, options);
+                    
+                    const data = await response.json();
+                    const success = response.ok;
+                    
+                    results.innerHTML += `<div class="log-entry ${success ? 'success' : 'error'}">
+                        ✅ ${test.name}: ${response.status} ${response.statusText}<br>
+                        Response: ${JSON.stringify(data)}
+                    </div>`;
+                    
+                    log(`${test.name}: ${success ? 'SUCCESS' : 'FAILED'}`, success ? 'success' : 'error');
+                    
+                } catch (error) {
+                    results.innerHTML += `<div class="log-entry error">
+                        ❌ ${test.name}: ${error.message}
+                    </div>`;
+                    log(`${test.name}: FAILED - ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Socket.IO Connection Test
+        function testSocketIOConnection() {
+            const results = document.getElementById('socket-results');
+            results.innerHTML = '';
+            
+            if (socket) {
+                socket.disconnect();
+            }
+            
+            log('Starting Socket.IO connection test', 'info');
+            results.innerHTML += '<div class="log-entry info">Connecting to ws://localhost:3001...</div>';
+            
+            // Create socket with detailed configuration
+            socket = io('http://localhost:3001', {
+                transports: ['websocket', 'polling'],
+                timeout: 10000,
+                forceNew: true,
+                reconnection: false,
+                withCredentials: true
+            });
+
+            updateConnectionStatus('connecting', 'Connecting...');
+
+            socket.on('connect', () => {
+                updateConnectionStatus('connected', `Connected (ID: ${socket.id})`);
+                results.innerHTML += `<div class="log-entry success">
+                    ✅ Connected! Socket ID: ${socket.id}<br>
+                    Transport: ${socket.io.engine.transport.name}<br>
+                    Ready State: ${socket.connected ? 'CONNECTED' : 'DISCONNECTED'}
+                </div>`;
+                log('Socket.IO connected successfully', 'success');
+            });
+
+            socket.on('connect_error', (error) => {
+                updateConnectionStatus('disconnected', 'Connection Failed');
+                results.innerHTML += `<div class="log-entry error">
+                    ❌ Connection Error: ${error.message}<br>
+                    Error Type: ${error.type}<br>
+                    Transport: ${socket.io.engine?.transport?.name || 'unknown'}
+                </div>`;
+                log(`Socket.IO connection error: ${error.message}`, 'error');
+            });
+
+            socket.on('disconnect', (reason) => {
+                updateConnectionStatus('disconnected', `Disconnected: ${reason}`);
+                results.innerHTML += `<div class="log-entry warning">
+                    ⚠️ Disconnected: ${reason}
+                </div>`;
+                log(`Socket.IO disconnected: ${reason}`, 'warning');
+            });
+
+            socket.on('error', (error) => {
+                results.innerHTML += `<div class="log-entry error">
+                    ❌ Socket Error: ${error.message}
+                </div>`;
+                log(`Socket.IO error: ${error.message}`, 'error');
+            });
+
+            // Test transport changes
+            socket.io.engine.on('upgrade', (transport) => {
+                results.innerHTML += `<div class="log-entry info">
+                    🔄 Transport upgraded to: ${transport.name}
+                </div>`;
+                log(`Transport upgraded to: ${transport.name}`, 'info');
+            });
+
+            socket.io.engine.on('upgradeError', (error) => {
+                results.innerHTML += `<div class="log-entry error">
+                    ❌ Transport upgrade error: ${error.message}
+                </div>`;
+                log(`Transport upgrade error: ${error.message}`, 'error');
+            });
+        }
+
+        function updateConnectionStatus(status, text) {
+            const indicator = document.getElementById('connection-status');
+            const textElement = document.getElementById('connection-text');
+            
+            indicator.className = `status-indicator status-${status}`;
+            textElement.textContent = text;
+        }
+
+        function disconnectSocket() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                updateConnectionStatus('disconnected', 'Disconnected');
+                log('Socket manually disconnected', 'info');
+            }
+        }
+
+        // Session Test
+        function joinSession() {
+            if (!socket || !socket.connected) {
+                alert('Please connect to Socket.IO first');
+                return;
+            }
+
+            const sessionId = document.getElementById('session-id').value;
+            const username = document.getElementById('username').value;
+            
+            if (!sessionId || !username) {
+                alert('Please enter session ID and username');
+                return;
+            }
+
+            currentSessionId = sessionId;
+            currentUsername = username;
+
+            const results = document.getElementById('session-results');
+            results.innerHTML = `<div class="log-entry info">Joining session ${sessionId} as ${username}...</div>`;
+            
+            socket.emit('joinSession', { sessionId, username });
+            
+            socket.once('usersList', (usersList) => {
+                results.innerHTML += `<div class="log-entry success">
+                    ✅ Joined session successfully!<br>
+                    Users in session: ${usersList.length}<br>
+                    Users: ${usersList.map(u => u.name).join(', ')}
+                </div>`;
+                log('Session joined successfully', 'success');
+            });
+
+            socket.once('userJoined', (user) => {
+                results.innerHTML += `<div class="log-entry info">
+                    👤 User joined: ${user.name}
+                </div>`;
+            });
+        }
+
+        function sendTestMessage() {
+            if (!socket || !socket.connected || !currentSessionId) {
+                alert('Please connect and join a session first');
+                return;
+            }
+
+            const message = {
+                id: Date.now().toString(),
+                userId: currentUsername,
+                userName: currentUsername,
+                content: btoa('Hello from debug test!'),
+                timestamp: new Date().toISOString(),
+                encrypted: true,
+                status: 'sent'
+            };
+
+            socket.emit('sendMessage', {
+                sessionId: currentSessionId,
+                username: currentUsername,
+                message: 'Hello from debug test!',
+                messageData: message
+            });
+
+            const results = document.getElementById('session-results');
+            results.innerHTML += `<div class="log-entry info">Test message sent!</div>`;
+            log('Test message sent', 'info');
+        }
+
+        // Network Diagnostics
+        function runNetworkDiagnostics() {
+            const results = document.getElementById('network-results');
+            results.innerHTML = '';
+            
+            // Test WebSocket support
+            const wsSupported = 'WebSocket' in window;
+            results.innerHTML += `<div class="log-entry ${wsSupported ? 'success' : 'error'}">
+                WebSocket Support: ${wsSupported ? '✅ Available' : '❌ Not Available'}
+            </div>`;
+
+            // Test CORS support
+            try {
+                const xhr = new XMLHttpRequest();
+                results.innerHTML += `<div class="log-entry info">
+                    XMLHttpRequest Support: ✅ Available
+                </div>`;
+            } catch (e) {
+                results.innerHTML += `<div class="log-entry error">
+                    XMLHttpRequest Support: ❌ Not Available
+                </div>`;
+            }
+
+            // Test localStorage
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                results.innerHTML += `<div class="log-entry success">
+                    LocalStorage: ✅ Available
+                </div>`;
+            } catch (e) {
+                results.innerHTML += `<div class="log-entry error">
+                    LocalStorage: ❌ Not Available
+                </div>`;
+            }
+
+            // Display connection details
+            results.innerHTML += `<div class="log-entry info">
+                <strong>Connection Details:</strong><br>
+                Protocol: ${window.location.protocol}<br>
+                Host: ${window.location.host}<br>
+                Origin: ${window.location.origin}<br>
+                Port: ${window.location.port || 'default'}
+            </div>`;
+
+            log('Network diagnostics completed', 'info');
+        }
+
+        // Logging
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('complete-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('complete-log').innerHTML = '';
+            document.getElementById('http-results').innerHTML = '';
+            document.getElementById('socket-results').innerHTML = '';
+            document.getElementById('session-results').innerHTML = '';
+            document.getElementById('network-results').innerHTML = '';
+        }
+
+        // Initialize
+        window.onload = function() {
+            displaySystemInfo();
+            log('Comprehensive debug page loaded', 'info');
+        };
+    </script>
+</body>
+</html>
