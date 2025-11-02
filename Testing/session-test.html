@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Session Test</title>
+</head>
+<body>
+    <h1>Session Test Page</h1>
+    <button onclick="createSession()">Create Session</button>
+    <button onclick="joinSession()">Join Session</button>
+    <div id="result"></div>
+
+    <script>
+        async function createSession() {
+            try {
+                const response = await fetch('http://localhost:3000/api/session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    `<p>Created session: <strong>${data.sessionId}</strong></p>
+                     <p>Copy this token and try joining with it!</p>`;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `Error: ${error.message}`;
+            }
+        }
+
+        async function joinSession() {
+            const token = prompt('Enter the 8-character session token:');
+            const username = prompt('Enter your username:');
+            
+            if (!token || !username) {
+                alert('Please enter both token and username');
+                return;
+            }
+
+            // Validate format
+            const tokenFormat = /^[A-Z0-9]{8}$/;
+            if (!tokenFormat.test(token.toUpperCase())) {
+                alert('Invalid format! Please use 8 alphanumeric characters (e.g., ABC12345)');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/session/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        sessionId: token.toUpperCase(), 
+                        username: username.trim() 
+                    })
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    document.getElementById('result').innerHTML = 
+                        `<p style="color: green;">✅ Successfully joined session ${token} as ${username}!</p>`;
+                } else {
+                    document.getElementById('result').innerHTML = 
+                        `<p style="color: red;">❌ Failed to join: ${data.error || 'Unknown error'}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
