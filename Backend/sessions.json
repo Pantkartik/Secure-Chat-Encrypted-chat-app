@@ -1650,9 +1650,26 @@
       "id": "000E96BD",
       "createdAt": "2025-11-02T18:29:13.745Z",
       "messages": [],
+      "users": []
+    },
+    "6DA27CAA": {
+      "id": "6DA27CAA",
+      "createdAt": "2025-11-02T18:30:11.914Z",
+      "messages": [
+        {
+          "id": "1762108216228",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "aGk=",
+          "timestamp": "2025-11-02T18:30:16.228Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
       "users": [
         {
-          "id": "6_cSH8V3ohHrE_wEAAAG",
+          "id": "JobhoMikrDt5s0i9AAAM",
           "name": "Google User",
           "status": "online",
           "isTyping": false
