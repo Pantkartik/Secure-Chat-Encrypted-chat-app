@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Deploy to Render</title>
+</head>
+<body style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif;">
+    <div style="text-align: center;">
+        <h1>🚀 Deploy Your Cypher Chat Backend</h1>
+        <p>Click the button below to deploy your backend to Render:</p>
+        
+        <a href="https://render.com/deploy?repo=https://github.com/Pantkartik/Cypher_Chat_version_2">
+            <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render" style="margin: 20px;">
+        </a>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+            <h3>⚙️ Auto-Detected Configuration:</h3>
+            <ul style="text-align: left; display: inline-block;">
+                <li><strong>Service Type:</strong> Web Service</li>
+                <li><strong>Name:</strong> cypher-chat-backend</li>
+                <li><strong>Build Command:</strong> npm install</li>
+                <li><strong>Start Command:</strong> node index.js</li>
+                <li><strong>Health Check:</strong> /health</li>
+                <li><strong>Root Directory:</strong> Backend</li>
+            </ul>
+        </div>
+        
+        <p style="margin-top: 20px; color: #666;">
+            After deployment, copy the URL and update your frontend's <code>.env.production</code> file
+        </p>
+    </div>
+</body>
+</html>

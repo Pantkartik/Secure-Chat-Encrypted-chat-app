@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: cypher-chat-backend
+    env: node
+    buildCommand: npm install
+    startCommand: node index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 18
