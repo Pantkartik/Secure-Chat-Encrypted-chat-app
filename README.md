@@ -4,10 +4,10 @@ Cypher Chat v2 is a modern, real-time chat application designed for cypher and p
 
 ---
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
 ![License](https://img.shields.io/badge/license-None-lightgrey)
-![Stars](https://img.shields.io/github/stars/Pantkartik/Cypher_Chat_version_2?style=social)
-![Forks](https://img.shields.io/github/forks/Pantkartik/Cypher_Chat_version_2?style=social)
+![Stars](https://img.shields.io/github/stars/pantkartik/Cypher_Chat_version_2?style=social)
+![Forks](https://img.shields.io/github/forks/pantkartik/Cypher_Chat_version_2?style=social)
 
 ---
 
