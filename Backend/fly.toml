@@ -1,0 +1,28 @@
+app = "cypher-chat-backend"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+  
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+  
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+  
+  [[services.http_checks]]
+    interval = "15s"
+    grace_period = "5s"
+    method = "get"
+    path = "/health"
+    timeout = "2s"
