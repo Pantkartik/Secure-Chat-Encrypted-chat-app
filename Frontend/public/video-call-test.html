@@ -1,0 +1,858 @@
+is <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Call Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .video-container {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        video {
+            width: 300px;
+            height: 200px;
+            background: #000;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .log {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #dee2e6;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            align-items: center;
+        }
+        input, select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .webrtc-stats {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 11px;
+            margin-top: 10px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎥 Video Call Test Suite</h1>
+    
+    <div class="container">
+        <h2>Connection Setup</h2>
+        <div class="input-group">
+            <label>Session ID:</label>
+            <input type="text" id="sessionId" placeholder="Enter session ID" value="TEST123">
+            <label>Username:</label>
+            <input type="text" id="username" placeholder="Enter your name" value="TestUser">
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
+        </div>
+        <div id="connectionStatus" class="status info">Not connected</div>
+    </div>
+
+    <div class="container">
+        <h2>Media Setup</h2>
+        <div class="controls">
+            <button onclick="getUserMedia()">Get Media</button>
+            <button onclick="stopMedia()">Stop Media</button>
+            <button onclick="toggleVideo()">Toggle Video</button>
+            <button onclick="toggleAudio()">Toggle Audio</button>
+        </div>
+        <div class="video-container">
+            <div>
+                <h3>Local Stream</h3>
+                <video id="localVideo" autoplay muted></video>
+            </div>
+            <div>
+                <h3>Remote Stream</h3>
+                <video id="remoteVideo" autoplay></video>
+            </div>
+        </div>
+        <div id="mediaStatus" class="status info">No media</div>
+    </div>
+
+    <div class="container">
+        <h2>Call Controls</h2>
+        <div class="input-group">
+            <label>Target User:</label>
+            <input type="text" id="targetUser" placeholder="Enter target username">
+            <button onclick="startVideoCall()">Start Video Call</button>
+            <button onclick="startAudioCall()">Start Audio Call</button>
+            <button onclick="answerCall()">Answer Call</button>
+            <button onclick="rejectCall()">Reject Call</button>
+            <button onclick="endCall()">End Call</button>
+        </div>
+        <div id="callStatus" class="status info">No active call</div>
+    </div>
+
+    <div class="container">
+        <h2>Connection Recovery</h2>
+        <div class="controls">
+            <button onclick="requestCallState()">Request Call State</button>
+            <button onclick="simulateReconnection()">Simulate Reconnection</button>
+            <button onclick="testIceRestart()">Test ICE Restart</button>
+        </div>
+        <div id="recoveryStatus" class="status info">Ready</div>
+    </div>
+
+    <div class="container">
+        <h2>Activity Log</h2>
+        <div id="log" class="log"></div>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <div class="container">
+        <h2>WebRTC Statistics</h2>
+        <div id="webrtcStats" class="webrtc-stats">No statistics available</div>
+        <button onclick="getStats()">Get Stats</button>
+    </div>
+
+    <script>
+        let socket = null;
+        let localStream = null;
+        let remoteStream = null;
+        let peerConnection = null;
+        let currentCall = null;
+        let isCaller = false;
+        
+        const config = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.style.marginBottom = '2px';
+            entry.style.color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#6c757d';
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+
+        function connect() {
+            const sessionId = document.getElementById('sessionId').value;
+            const username = document.getElementById('username').value;
+            
+            if (!sessionId || !username) {
+                log('Please enter session ID and username', 'error');
+                return;
+            }
+
+            try {
+                socket = io('http://localhost:3001', {
+                    query: { sessionId, username }
+                });
+
+                socket.on('connect', () => {
+                    log(`Connected to server: ${socket.id}`, 'success');
+                    updateStatus('connectionStatus', `Connected: ${socket.id}`, 'success');
+                    
+                    socket.emit('joinSession', { sessionId, username });
+                });
+
+                socket.on('disconnect', () => {
+                    log('Disconnected from server', 'error');
+                    updateStatus('connectionStatus', 'Disconnected', 'error');
+                });
+
+                socket.on('userJoined', (data) => {
+                    log(`User joined: ${data.username} (${data.userId})`, 'info');
+                });
+
+                socket.on('userLeft', (data) => {
+                    log(`User left: ${data.userId}`, 'info');
+                    if (currentCall && currentCall.participants.includes(data.userId)) {
+                        handleCallEnd();
+                    }
+                });
+
+                socket.on('userDisconnected', (data) => {
+                    log(`User disconnected: ${data.userId}`, 'warning');
+                    if (currentCall && currentCall.participants.includes(data.userId)) {
+                        handleCallEnd();
+                    }
+                });
+
+                // Video call events
+                socket.on('videoCallRequest', (data) => {
+                    log(`Incoming video call from ${data.callerName}`, 'info');
+                    currentCall = {
+                        callerId: data.callerId,
+                        callerName: data.callerName,
+                        type: 'video',
+                        participants: [data.callerId]
+                    };
+                    updateStatus('callStatus', `Incoming video call from ${data.callerName}`, 'warning');
+                });
+
+                socket.on('audioCallRequest', (data) => {
+                    log(`Incoming audio call from ${data.callerName}`, 'info');
+                    currentCall = {
+                        callerId: data.callerId,
+                        callerName: data.callerName,
+                        type: 'audio',
+                        participants: [data.callerId]
+                    };
+                    updateStatus('callStatus', `Incoming audio call from ${data.callerName}`, 'warning');
+                });
+
+                socket.on('videoCallOffer', async (data) => {
+                    log(`Received video call offer from ${data.callerName}`, 'info');
+                    await handleOffer(data.offer, data.callerId);
+                });
+
+                socket.on('videoCallAnswer', async (data) => {
+                    log(`Received video call answer`, 'info');
+                    await handleAnswer(data.answer);
+                });
+
+                socket.on('audioCallOffer', async (data) => {
+                    log(`Received audio call offer from ${data.callerName}`, 'info');
+                    await handleOffer(data.offer, data.callerId);
+                });
+
+                socket.on('audioCallAnswer', async (data) => {
+                    log(`Received audio call answer`, 'info');
+                    await handleAnswer(data.answer);
+                });
+
+                socket.on('iceCandidate', async (data) => {
+                    log(`Received ICE candidate`, 'info');
+                    await handleIceCandidate(data.candidate);
+                });
+
+                socket.on('videoCallEnd', (data) => {
+                    log('Video call ended', 'info');
+                    handleCallEnd();
+                });
+
+                socket.on('audioCallEnd', (data) => {
+                    log('Audio call ended', 'info');
+                    handleCallEnd();
+                });
+
+                socket.on('videoCallError', (data) => {
+                    log(`Video call error: ${data.error}`, 'error');
+                    updateStatus('callStatus', `Error: ${data.error}`, 'error');
+                });
+
+                socket.on('audioCallError', (data) => {
+                    log(`Audio call error: ${data.error}`, 'error');
+                    updateStatus('callStatus', `Error: ${data.error}`, 'error');
+                });
+
+                socket.on('streamStateChanged', (data) => {
+                    log(`Stream state changed - Video: ${data.isVideoEnabled}, Audio: ${data.isAudioEnabled}`, 'info');
+                });
+
+                socket.on('callStateRequest', (data) => {
+                    log(`Call state requested by ${data.requesterName}`, 'info');
+                    if (currentCall) {
+                        socket.emit('callStateResponse', {
+                            targetUserId: data.requesterId,
+                            callerName: document.getElementById('username').value,
+                            isInCall: true,
+                            callType: currentCall.type,
+                            participants: currentCall.participants
+                        });
+                    }
+                });
+
+                socket.on('callStateResponse', (data) => {
+                    log(`Call state response - In call: ${data.isInCall}, Type: ${data.callType}`, 'info');
+                    updateStatus('recoveryStatus', `Call state: ${data.isInCall ? 'Active' : 'Inactive'}`, 'info');
+                });
+
+            } catch (error) {
+                log(`Connection error: ${error.message}`, 'error');
+                updateStatus('connectionStatus', `Connection error: ${error.message}`, 'error');
+            }
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                log('Disconnected from server', 'info');
+                updateStatus('connectionStatus', 'Disconnected', 'error');
+            }
+        }
+
+        async function getUserMedia() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: true 
+                });
+                
+                const localVideo = document.getElementById('localVideo');
+                localVideo.srcObject = localStream;
+                
+                log('Media access granted', 'success');
+                updateStatus('mediaStatus', 'Media access granted', 'success');
+                
+                // Monitor stream state
+                localStream.getVideoTracks()[0]?.addEventListener('ended', () => {
+                    log('Video track ended', 'warning');
+                });
+                
+                localStream.getAudioTracks()[0]?.addEventListener('ended', () => {
+                    log('Audio track ended', 'warning');
+                });
+                
+            } catch (error) {
+                log(`Media access error: ${error.message}`, 'error');
+                updateStatus('mediaStatus', `Media error: ${error.message}`, 'error');
+            }
+        }
+
+        function stopMedia() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+                document.getElementById('localVideo').srcObject = null;
+                log('Media stopped', 'info');
+                updateStatus('mediaStatus', 'Media stopped', 'info');
+            }
+        }
+
+        function toggleVideo() {
+            if (localStream) {
+// Replace your current video-call.tsx with simple-peer-video-call.tsx
+import SimplePeerVideoCall from "@/components/simple-peer-video-call"
+
+// Usage is almost identical but much more stable
+<SimplePeerVideoCall
+  isOpen={isCallOpen}
+  onClose={() => setIsCallOpen(false)}
+  sessionId={sessionId}
+  username={username}
+  socket={socket}
+  targetUserId={targetUserId}
+  isGroupCall={false}
+  isAudioOnly={false}
+/>
+
+                    log('Video track ended', 'warning');
+                });
+                
+                localStream.getAudioTracks()[0]?.addEventListener('ended', () => {
+                    log('Audio track ended', 'warning');
+                });
+                
+            } catch (error) {
+                log(`Media access error: ${error.message}`, 'error');
+                updateStatus('mediaStatus', `Media error: ${error.message}`, 'error');
+            }
+        }
+
+        function stopMedia() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+                document.getElementById('localVideo').srcObject = null;
+                log('Media stopped', 'info');
+                updateStatus('mediaStatus', 'Media stopped', 'info');
+            }
+        }
+
+        function toggleVideo() {
+            if (localStream) {
+                const videoTrack = localStream.getVideoTracks()[0];
+                if (videoTrack) {
+                    videoTrack.enabled = !videoTrack.enabled;
+                    log(`Video ${videoTrack.enabled ? 'enabled' : 'disabled'}`, 'info');
+                    
+                    // Notify about stream state change
+                    if (socket) {
+                        socket.emit('streamStateChanged', {
+                            sessionId: document.getElementById('sessionId').value,
+                            callerName: document.getElementById('username').value,
+                            isVideoEnabled: videoTrack.enabled,
+                            isAudioEnabled: localStream.getAudioTracks()[0]?.enabled || false
+                        });
+                    }
+                }
+            }
+        }
+
+        function toggleAudio() {
+            if (localStream) {
+                const audioTrack = localStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    audioTrack.enabled = !audioTrack.enabled;
+                    log(`Audio ${audioTrack.enabled ? 'enabled' : 'disabled'}`, 'info');
+                    
+                    // Notify about stream state change
+                    if (socket) {
+                        socket.emit('streamStateChanged', {
+                            sessionId: document.getElementById('sessionId').value,
+                            callerName: document.getElementById('username').value,
+                            isVideoEnabled: localStream.getVideoTracks()[0]?.enabled || false,
+                            isAudioEnabled: audioTrack.enabled
+                        });
+                    }
+                }
+            }
+        }
+
+        async function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(config);
+            
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate && socket) {
+                    log('Sending ICE candidate', 'info');
+                    socket.emit('iceCandidate', {
+                        targetUserId: currentCall?.callerId,
+                        candidate: event.candidate,
+                        callerName: document.getElementById('username').value
+                    });
+                }
+            };
+            
+            peerConnection.ontrack = (event) => {
+                log('Received remote stream', 'success');
+                remoteStream = event.streams[0];
+                document.getElementById('remoteVideo').srcObject = remoteStream;
+            };
+            
+            peerConnection.onconnectionstatechange = () => {
+                log(`Connection state: ${peerConnection.connectionState}`, 'info');
+                if (peerConnection.connectionState === 'connected') {
+                    updateStatus('callStatus', 'Call connected', 'success');
+                } else if (peerConnection.connectionState === 'failed') {
+                    updateStatus('callStatus', 'Connection failed', 'error');
+                }
+            };
+            
+            peerConnection.oniceconnectionstatechange = () => {
+                log(`ICE connection state: ${peerConnection.iceConnectionState}`, 'info');
+            };
+            
+            // Add local stream
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+            }
+            
+            return peerConnection;
+        }
+
+        async function startVideoCall() {
+            const targetUser = document.getElementById('targetUser').value;
+            if (!targetUser || !socket) {
+                log('Please enter target user and connect to server', 'error');
+                return;
+            }
+            
+            if (!localStream) {
+                log('Please get media access first', 'error');
+                return;
+            }
+            
+            try {
+                isCaller = true;
+                currentCall = {
+                    targetUser: targetUser,
+                    type: 'video',
+                    participants: []
+                };
+                
+                await createPeerConnection();
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                
+                log('Sending video call request', 'info');
+                socket.emit('videoCallRequest', {
+                    sessionId: document.getElementById('sessionId').value,
+                    targetUserId: targetUser,
+                    callerName: document.getElementById('username').value
+                });
+                
+                // Send offer after request
+                setTimeout(() => {
+                    socket.emit('videoCallOffer', {
+                        sessionId: document.getElementById('sessionId').value,
+                        targetUserId: targetUser,
+                        offer: offer,
+                        callerName: document.getElementById('username').value
+                    });
+                }, 1000);
+                
+                updateStatus('callStatus', 'Calling...', 'warning');
+                
+            } catch (error) {
+                log(`Start video call error: ${error.message}`, 'error');
+                updateStatus('callStatus', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function startAudioCall() {
+            const targetUser = document.getElementById('targetUser').value;
+            if (!targetUser || !socket) {
+                log('Please enter target user and connect to server', 'error');
+                return;
+            }
+            
+            if (!localStream) {
+                log('Please get media access first', 'error');
+                return;
+            }
+            
+            try {
+                isCaller = true;
+                currentCall = {
+                    targetUser: targetUser,
+                    type: 'audio',
+                    participants: []
+                };
+                
+                await createPeerConnection();
+                
+                // Disable video for audio call
+                const videoTrack = localStream.getVideoTracks()[0];
+                if (videoTrack) {
+                    videoTrack.enabled = false;
+                }
+                
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                
+                log('Sending audio call request', 'info');
+                socket.emit('audioCallRequest', {
+                    sessionId: document.getElementById('sessionId').value,
+                    targetUserId: targetUser,
+                    callerName: document.getElementById('username').value
+                });
+                
+                // Send offer after request
+                setTimeout(() => {
+                    socket.emit('audioCallOffer', {
+                        sessionId: document.getElementById('sessionId').value,
+                        targetUserId: targetUser,
+                        offer: offer,
+                        callerName: document.getElementById('username').value
+                    });
+                }, 1000);
+                
+                updateStatus('callStatus', 'Calling...', 'warning');
+                
+            } catch (error) {
+                log(`Start audio call error: ${error.message}`, 'error');
+                updateStatus('callStatus', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function answerCall() {
+            if (!currentCall || !socket) {
+                log('No incoming call to answer', 'error');
+                return;
+            }
+            
+            try {
+                await createPeerConnection();
+                
+                // For audio calls, disable video
+                if (currentCall.type === 'audio') {
+                    const videoTrack = localStream.getVideoTracks()[0];
+                    if (videoTrack) {
+                        videoTrack.enabled = false;
+                    }
+                }
+                
+                // Create answer
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                
+                log('Answering call', 'info');
+                
+                if (currentCall.type === 'video') {
+                    socket.emit('videoCallAnswer', {
+                        targetUserId: currentCall.callerId,
+                        answer: answer,
+                        callerName: document.getElementById('username').value
+                    });
+                } else {
+                    socket.emit('audioCallAnswer', {
+                        targetUserId: currentCall.callerId,
+                        answer: answer,
+                        callerName: document.getElementById('username').value
+                    });
+                }
+                
+                updateStatus('callStatus', 'Call answered', 'success');
+                
+            } catch (error) {
+                log(`Answer call error: ${error.message}`, 'error');
+                updateStatus('callStatus', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        function rejectCall() {
+            if (currentCall) {
+                log('Call rejected', 'info');
+                if (currentCall.type === 'video') {
+                    socket.emit('videoCallEnd', {
+                        targetUserId: currentCall.callerId,
+                        callerName: document.getElementById('username').value
+                    });
+                } else {
+                    socket.emit('audioCallEnd', {
+                        targetUserId: currentCall.callerId,
+                        callerName: document.getElementById('username').value
+                    });
+                }
+                handleCallEnd();
+            }
+        }
+
+        function endCall() {
+            if (currentCall && socket) {
+                log('Ending call', 'info');
+                
+                if (currentCall.type === 'video') {
+                    socket.emit('videoCallEnd', {
+                        targetUserId: currentCall.callerId || currentCall.targetUser,
+                        callerName: document.getElementById('username').value
+                    });
+                } else {
+                    socket.emit('audioCallEnd', {
+                        targetUserId: currentCall.callerId || currentCall.targetUser,
+                        callerName: document.getElementById('username').value
+                    });
+                }
+                
+                handleCallEnd();
+            }
+        }
+
+        function handleCallEnd() {
+            currentCall = null;
+            isCaller = false;
+            
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            
+            document.getElementById('remoteVideo').srcObject = null;
+            remoteStream = null;
+            
+            log('Call ended', 'info');
+            updateStatus('callStatus', 'No active call', 'info');
+        }
+
+        async function handleOffer(offer, callerId) {
+            try {
+                if (!peerConnection) {
+                    await createPeerConnection();
+                }
+                
+                await peerConnection.setRemoteDescription(offer);
+                log('Remote description set', 'info');
+                
+            } catch (error) {
+                log(`Handle offer error: ${error.message}`, 'error');
+            }
+        }
+
+        async function handleAnswer(answer) {
+            try {
+                if (peerConnection) {
+                    await peerConnection.setRemoteDescription(answer);
+                    log('Remote answer set', 'info');
+                }
+            } catch (error) {
+                log(`Handle answer error: ${error.message}`, 'error');
+            }
+        }
+
+        async function handleIceCandidate(candidate) {
+            try {
+                if (peerConnection) {
+                    await peerConnection.addIceCandidate(candidate);
+                    log('ICE candidate added', 'info');
+                }
+            } catch (error) {
+                log(`Handle ICE candidate error: ${error.message}`, 'error');
+            }
+        }
+
+        function requestCallState() {
+            if (socket) {
+                const targetUser = document.getElementById('targetUser').value;
+                if (targetUser) {
+                    socket.emit('requestCallState', {
+                        targetUserId: targetUser,
+                        callerName: document.getElementById('username').value
+                    });
+                    log('Requesting call state', 'info');
+                }
+            }
+        }
+
+        function simulateReconnection() {
+            log('Simulating reconnection...', 'warning');
+            if (socket) {
+                socket.disconnect();
+                setTimeout(() => {
+                    connect();
+                    log('Reconnection complete', 'success');
+                }, 2000);
+            }
+        }
+
+        function testIceRestart() {
+            if (peerConnection) {
+                log('Testing ICE restart...', 'info');
+                peerConnection.createOffer({ iceRestart: true })
+                    .then(offer => {
+                        return peerConnection.setLocalDescription(offer);
+                    })
+                    .then(() => {
+                        log('ICE restart offer created', 'success');
+                        if (socket && currentCall) {
+                            socket.emit('videoCallOffer', {
+                                sessionId: document.getElementById('sessionId').value,
+                                targetUserId: currentCall.callerId || currentCall.targetUser,
+                                offer: peerConnection.localDescription,
+                                callerName: document.getElementById('username').value
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        log(`ICE restart error: ${error.message}`, 'error');
+                    });
+            }
+        }
+
+        async function getStats() {
+            if (peerConnection) {
+                try {
+                    const stats = await peerConnection.getStats();
+                    let statsHtml = '<h4>WebRTC Statistics:</h4>';
+                    
+                    stats.forEach(report => {
+                        if (report.type === 'inbound-rtp' || report.type === 'outbound-rtp') {
+                            statsHtml += `<div style="margin-bottom: 10px;">`;
+                            statsHtml += `<strong>${report.type}:</strong><br>`;
+                            statsHtml += `Packets: ${report.packetsSent || report.packetsReceived}<br>`;
+                            statsHtml += `Bytes: ${report.bytesSent || report.bytesReceived}<br>`;
+                            statsHtml += `Codec: ${report.codecId}<br>`;
+                            if (report.type === 'outbound-rtp') {
+                                statsHtml += `Round Trip Time: ${report.roundTripTime || 'N/A'}<br>`;
+                            }
+                            statsHtml += `</div>`;
+                        }
+                    });
+                    
+                    document.getElementById('webrtcStats').innerHTML = statsHtml;
+                } catch (error) {
+                    log(`Get stats error: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        // Auto-connect on page load
+        window.addEventListener('load', () => {
+            log('Video call test page loaded', 'info');
+            // Auto-connect after 2 seconds
+            setTimeout(() => {
+                if (!socket) {
+                    connect();
+                }
+            }, 2000);
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            if (socket) {
+                socket.disconnect();
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>

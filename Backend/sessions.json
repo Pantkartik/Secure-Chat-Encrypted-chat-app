@@ -1669,8 +1669,286 @@
       ],
       "users": [
         {
-          "id": "EYhHHrEy0BZs6_9iAAAP",
+          "id": "h9ABUIKacsqOfIkWAAAb",
           "name": "Google User",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "BD69DD24": {
+      "id": "BD69DD24",
+      "createdAt": "2025-11-02T19:29:07.805Z",
+      "messages": [],
+      "users": []
+    },
+    "8E7161DB": {
+      "id": "8E7161DB",
+      "createdAt": "2025-11-02T19:45:26.542Z",
+      "messages": [],
+      "users": []
+    },
+    "392465A9": {
+      "id": "392465A9",
+      "createdAt": "2025-11-02T19:46:58.574Z",
+      "messages": [],
+      "users": []
+    },
+    "4E35EC03": {
+      "id": "4E35EC03",
+      "createdAt": "2025-11-02T19:50:26.684Z",
+      "messages": [],
+      "users": []
+    },
+    "22C97990": {
+      "id": "22C97990",
+      "createdAt": "2025-11-05T17:42:32.060Z",
+      "messages": [],
+      "users": []
+    },
+    "C31C8C4F": {
+      "id": "C31C8C4F",
+      "createdAt": "2025-11-05T18:04:16.527Z",
+      "messages": [],
+      "users": []
+    },
+    "D57B72C5": {
+      "id": "D57B72C5",
+      "createdAt": "2025-11-05T18:16:16.460Z",
+      "messages": [],
+      "users": []
+    },
+    "9BFEDE2A": {
+      "id": "9BFEDE2A",
+      "createdAt": "2025-11-05T18:23:02.472Z",
+      "messages": [],
+      "users": []
+    },
+    "C218F4A5": {
+      "id": "C218F4A5",
+      "createdAt": "2025-11-05T18:26:40.931Z",
+      "messages": [
+        {
+          "id": "1762367674083",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "amlqIA==",
+          "timestamp": "2025-11-05T18:34:34.083Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "2CB0EB87": {
+      "id": "2CB0EB87",
+      "createdAt": "2025-11-05T18:35:48.275Z",
+      "messages": [
+        {
+          "id": "1762367806483",
+          "userId": "Naman Pant",
+          "userName": "Naman Pant",
+          "content": "aGk=",
+          "timestamp": "2025-11-05T18:36:46.483Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1762367811539",
+          "userId": "Kartik",
+          "userName": "Kartik",
+          "content": "YWZhZmFhZg==",
+          "timestamp": "2025-11-05T18:36:51.539Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1762367816794",
+          "userId": "Naman Pant",
+          "userName": "Naman Pant",
+          "content": "bGZobGFmYWw=",
+          "timestamp": "2025-11-05T18:36:56.794Z",
+          "encrypted": true,
+          "status": "sent",
+          "replyTo": "1762367811539",
+          "isPrivate": false
+        },
+        {
+          "id": "1762368014660",
+          "userId": "Naman Pant",
+          "userName": "Naman Pant",
+          "content": "aGhoaGho",
+          "timestamp": "2025-11-05T18:40:14.660Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": [
+        {
+          "id": "r14zinf-kbr3R0veAAAZ",
+          "name": "Kartik",
+          "status": "online",
+          "isTyping": false
+        },
+        {
+          "id": "aQGd9Ztk2JTBfMMbAAAc",
+          "name": "Naman Pant",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "A81E6CF5": {
+      "id": "A81E6CF5",
+      "createdAt": "2025-11-05T19:02:34.466Z",
+      "messages": [
+        {
+          "id": "1762369378536",
+          "userId": "Naman Pant",
+          "userName": "Naman Pant",
+          "content": "aGlpaGlp",
+          "timestamp": "2025-11-05T19:02:58.536Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1762369382924",
+          "userId": "Naman",
+          "userName": "Naman",
+          "content": "aGhoc2hocw==",
+          "timestamp": "2025-11-05T19:03:02.924Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "874B2ABC": {
+      "id": "874B2ABC",
+      "createdAt": "2025-11-05T19:10:56.368Z",
+      "messages": [
+        {
+          "id": "1762369877086",
+          "userId": "kartik pant",
+          "userName": "kartik pant",
+          "content": "aGloaWhoaGhoaGg=",
+          "timestamp": "2025-11-05T19:11:17.086Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": [
+        {
+          "id": "oXicRBHu7zmgwjeYAAAu",
+          "name": "kartik pant",
+          "status": "online",
+          "isTyping": false
+        },
+        {
+          "id": "dSk5jyoB-_8bAQOYAAAx",
+          "name": "hgjhgjhg",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "509E9461": {
+      "id": "509E9461",
+      "createdAt": "2025-11-05T19:30:56.266Z",
+      "messages": [],
+      "users": [
+        {
+          "id": "FR799BBV1_srC01OAAAE",
+          "name": "Naman Pant",
+          "status": "online",
+          "isTyping": false
+        },
+        {
+          "id": "liTO6fRW8QeB2iwPAAAH",
+          "name": "kartik1",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "0D92E7D3": {
+      "id": "0D92E7D3",
+      "createdAt": "2025-11-05T19:37:53.762Z",
+      "messages": [
+        {
+          "id": "1762371734328",
+          "userId": "AXON",
+          "userName": "AXON",
+          "content": "aGk=",
+          "timestamp": "2025-11-05T19:42:14.328Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1762371743493",
+          "userId": "kartik1",
+          "userName": "kartik1",
+          "content": "aGg=",
+          "timestamp": "2025-11-05T19:42:23.493Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": [
+        {
+          "id": "V1vppLi0JcJxrUN3AAAI",
+          "name": "Naman Pant",
+          "status": "online",
+          "isTyping": false
+        },
+        {
+          "id": "SfiXdbnkp7Hew_0UAAAL",
+          "name": "AXON",
+          "status": "online",
+          "isTyping": false
+        },
+        {
+          "id": "0Z6zNyChbfAqBcVmAAAG",
+          "name": "AXON",
+          "status": "online",
+          "isTyping": false
+        },
+        {
+          "id": "NeHXsTmY4t6IZ2Y-AAAJ",
+          "name": "kartik1",
+          "status": "online",
+          "isTyping": false
+        },
+        {
+          "id": "q5k4C9u-wHnptChIAAAI",
+          "name": "kartik1",
+          "status": "online",
+          "isTyping": false
+        },
+        {
+          "id": "llmYnlbwiodmfpw0AAAL",
+          "name": "kartik1",
+          "status": "online",
+          "isTyping": false
+        },
+        {
+          "id": "Rr_AXy_NY14IDOXTAAAI",
+          "name": "kartik1",
+          "status": "online",
+          "isTyping": false
+        },
+        {
+          "id": "yI66G97wHn0F8LO1AAAO",
+          "name": "AXON",
           "status": "online",
           "isTyping": false
         }
@@ -1809,6 +2087,23 @@
     ],
     "91F37F77": [
       "Nivedita"
+    ],
+    "2CB0EB87": [
+      "Kartik"
+    ],
+    "A81E6CF5": [
+      "Naman"
+    ],
+    "874B2ABC": [
+      "AXON",
+      "hgjhgjhg"
+    ],
+    "509E9461": [
+      "kartik1"
+    ],
+    "0D92E7D3": [
+      "AXON",
+      "kartik1"
     ]
   }
 }

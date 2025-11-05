@@ -31,11 +31,23 @@ export default function HostSessionPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       })
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`)
+      }
+      
       const data = await res.json()
+      if (!data.sessionId) {
+        throw new Error('No sessionId in response')
+      }
+      
       setSessionToken(data.sessionId)
-      setQrCodeUrl(`/placeholder.svg?height=200&width=200&query=QR code for session ${data.sessionId}`)
+      // Generate QR code using a proper QR code API
+      const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.sessionId)}`
+      setQrCodeUrl(qrDataUrl)
     } catch (err) {
       console.error("Failed to create session:", err)
+      alert("Failed to create session. Please check if the backend server is running.")
     }
     setIsGenerating(false)
   }
@@ -216,7 +228,7 @@ export default function HostSessionPage() {
                 <CardContent>
                   <div className="flex flex-col items-center space-y-4">
                     <div className="p-4 bg-white rounded-lg shadow-sm border">
-                      <QRCodeCanvas value={sessionToken} size={192} />
+                      <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
                     </div>
                     <p className="text-sm text-muted-foreground text-center">
                       Scan with any QR code reader or the SecureChat app
@@ -235,7 +247,7 @@ export default function HostSessionPage() {
 
             {sessionToken && (
               <div className="flex flex-col items-center mt-8">
-                <QRCodeCanvas value={sessionToken} size={200} />
+                <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
                 <p className="mt-2 text-sm text-muted-foreground">Scan this QR code to join the session</p>
               </div>
             )}

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chat Connection</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .connected { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .disconnected { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .error { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .log { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>Chat Connection Test</h1>
+    
+    <div id="status" class="status disconnected">Disconnected</div>
+    
+    <div>
+        <button onclick="testConnection()">Test Connection</button>
+        <button onclick="joinSession()">Join Test Session</button>
+        <button onclick="sendMessage()">Send Test Message</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+    
+    <div class="log" id="log"></div>
+
+    <script>
+        let socket = null;
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}<br>`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function updateStatus(connected, message = '') {
+            if (connected) {
+                status.className = 'status connected';
+                status.textContent = 'Connected' + (message ? ' - ' + message : '');
+            } else {
+                status.className = 'status disconnected';
+                status.textContent = 'Disconnected' + (message ? ' - ' + message : '');
+            }
+        }
+        
+        function testConnection() {
+            addLog('Testing connection to http://localhost:3001...');
+            
+            socket = io('http://localhost:3001');
+            
+            socket.on('connect', () => {
+                addLog('✅ Connected to server!');
+                updateStatus(true, 'Socket ID: ' + socket.id);
+            });
+            
+            socket.on('disconnect', (reason) => {
+                addLog('❌ Disconnected: ' + reason);
+                updateStatus(false, reason);
+            });
+            
+            socket.on('connect_error', (error) => {
+                addLog('❌ Connection error: ' + error.message);
+                updateStatus(false, 'Error: ' + error.message);
+            });
+            
+            socket.on('usersList', (users) => {
+                addLog('👥 Users list received: ' + JSON.stringify(users));
+            });
+            
+            socket.on('userJoined', (data) => {
+                addLog('👤 User joined: ' + JSON.stringify(data));
+            });
+            
+            socket.on('userLeft', (data) => {
+                addLog('👋 User left: ' + JSON.stringify(data));
+            });
+            
+            socket.on('userCountUpdate', (count) => {
+                addLog('📊 User count: ' + count);
+            });
+            
+            socket.on('message', (message) => {
+                addLog('💬 Message received: ' + JSON.stringify(message));
+            });
+        }
+        
+        function joinSession() {
+            if (!socket) {
+                addLog('❌ No connection available. Test connection first.');
+                return;
+            }
+            
+            const sessionId = 'test-session-' + Date.now();
+            const username = 'TestUser-' + Math.floor(Math.random() * 1000);
+            
+            addLog(`Joining session: ${sessionId} as ${username}`);
+            socket.emit('joinSession', { sessionId, username });
+        }
+        
+        function sendMessage() {
+            if (!socket) {
+                addLog('❌ No connection available. Test connection first.');
+                return;
+            }
+            
+            const message = {
+                content: 'Hello from test!',
+                encrypted: false,
+                timestamp: new Date()
+            };
+            
+            addLog('📤 Sending message: ' + JSON.stringify(message));
+            socket.emit('message', message);
+        }
+        
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                addLog('🔌 Manually disconnected');
+                updateStatus(false, 'Manual disconnect');
+            }
+        }
+        
+        // Auto-test connection on page load
+        window.onload = () => {
+            addLog('Page loaded, auto-testing connection...');
+            testConnection();
+        };
+    </script>
+</body>
+</html>

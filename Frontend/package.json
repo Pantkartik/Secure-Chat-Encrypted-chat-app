@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@daily-co/daily-js": "^0.85.0",
     "@hookform/resolvers": "^3.10.0",
     "@jitsi/react-sdk": "^1.4.4",
     "@radix-ui/react-accordion": "1.2.2",
@@ -38,6 +39,7 @@
     "@radix-ui/react-toggle": "1.1.1",
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
+    "@stream-io/video-react-sdk": "^1.25.1",
     "@types/simple-peer": "^9.11.9",
     "@vercel/analytics": "1.3.1",
     "autoprefixer": "^10.4.20",
@@ -63,6 +65,8 @@
     "simple-peer": "^9.11.1",
     "socket.io-client": "^4.8.1",
     "sonner": "^1.7.4",
+    "stream-chat": "^9.25.0",
+    "stream-chat-react": "^13.11.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
@@ -75,6 +79,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "cors": "^2.8.5",
+    "eslint": "^9.39.1",
     "express": "^5.1.0",
     "postcss": "^8.5",
     "socket.io": "^4.8.1",

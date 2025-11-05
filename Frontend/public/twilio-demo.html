@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twilio Video Demo - Professional Grade!</title>
+    <script src="https://sdk.twilio.com/js/video/releases/2.27.0/twilio-video.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .setup-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #667eea;
+        }
+
+        .setup-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setup-steps {
+            list-style: none;
+            counter-reset: step-counter;
+        }
+
+        .setup-steps li {
+            counter-increment: step-counter;
+            margin-bottom: 15px;
+            padding-left: 40px;
+            position: relative;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .setup-steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #667eea;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .api-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .api-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .video-container {
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 16/9;
+        }
+
+        .video-element {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .local-video {
+            border: 3px solid #667eea;
+        }
+
+        .remote-video {
+            border: 3px solid #28a745;
+        }
+
+        .status {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .error {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #1565c0;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        .feature-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .feature-desc {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .participant-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .demo-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            button {
+                justify-content: center;
+            }
+            
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📡 Twilio Video</h1>
+        <p class="subtitle">Professional-grade video calling with enterprise features!</p>
+
+        <div class="setup-section">
+            <h3>🔑 Step 1: Get Your Twilio Credentials</h3>
+            <ol class="setup-steps">
+                <li>Go to <a href="https://twilio.com" target="_blank">twilio.com</a> and create a free account</li>
+                <li>Navigate to your Twilio Console</li>
+                <li>Copy your Account SID and Video API Key</li>
+                <li>Paste them below to get started!</li>
+            </ol>
+            
+            <div class="input-group">
+                <label for="accountSid">Account SID:</label>
+                <input type="password" id="accountSid" class="api-input" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+            </div>
+            
+            <div class="input-group">
+                <label for="apiKey">API Key:</label>
+                <input type="password" id="apiKey" class="api-input" placeholder="SKxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+            </div>
+            
+            <div class="input-group">
+                <label for="apiSecret">API Secret:</label>
+                <input type="password" id="apiSecret" class="api-input" placeholder="Your API Secret">
+            </div>
+        </div>
+
+        <div class="demo-controls">
+            <button id="connectBtn" onclick="connectToRoom()">
+                🔗 Connect to Room
+            </button>
+            <button id="disconnectBtn" onclick="disconnectFromRoom()" disabled>
+                📴 Disconnect
+            </button>
+            <button id="toggleVideoBtn" onclick="toggleVideo()" disabled>
+                📹 Toggle Video
+            </button>
+            <button id="toggleAudioBtn" onclick="toggleAudio()" disabled>
+                🎤 Toggle Audio
+            </button>
+        </div>
+
+        <div id="status" class="status" style="display: none;">
+            <span id="statusText"></span>
+        </div>
+
+        <div class="info-box">
+            <strong>🚀 Why Choose Twilio Video:</strong><br>
+            • Enterprise-grade reliability and scale<br>
+            • Advanced features like recording and screen sharing<br>
+            • Global infrastructure with low latency<br>
+            • Comprehensive SDKs and excellent documentation<br>
+            • Perfect for production applications!
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🏢</div>
+                <div class="feature-title">Enterprise Ready</div>
+                <div class="feature-desc">Built for scale and reliability</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎥</div>
+                <div class="feature-title">Advanced Features</div>
+                <div class="feature-desc">Recording, screen share, analytics</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌍</div>
+                <div class="feature-title">Global Network</div>
+                <div class="feature-desc">Low latency worldwide</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <div class="feature-title">Analytics</div>
+                <div class="feature-desc">Detailed call insights</div>
+            </div>
+        </div>
+
+        <div id="videoGrid" class="video-grid"></div>
+    </div>
+
+    <script>
+        let room = null;
+        let localTrack = null;
+        let remoteTracks = new Map();
+        let isVideoMuted = false;
+        let isAudioMuted = false;
+
+        function showStatus(message, isError = false) {
+            const statusEl = document.getElementById('status');
+            const statusText = document.getElementById('statusText');
+            
+            statusText.textContent = message;
+            statusEl.className = isError ? 'status error' : 'status';
+            statusEl.style.display = 'flex';
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 5000);
+        }
+
+        async function getAccessToken() {
+            // In a real app, you'd get this from your backend
+            // For demo purposes, we'll create a simple token
+            const accountSid = document.getElementById('accountSid').value.trim();
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const apiSecret = document.getElementById('apiSecret').value.trim();
+            
+            if (!accountSid || !apiKey || !apiSecret) {
+                throw new Error('Please enter all Twilio credentials');
+            }
+
+            // This is a simplified token generation for demo purposes
+            // In production, always generate tokens on your backend!
+            const identity = `user-${Date.now()}`;
+            const roomName = 'demo-room';
+            
+            // For demo, we'll use a mock token - in real apps, call your backend
+            return {
+                token: `mock-token-for-demo-${identity}`,
+                identity: identity,
+                roomName: roomName
+            };
+        }
+
+        async function connectToRoom() {
+            try {
+                showStatus('Connecting to Twilio Video...');
+                
+                const { token, identity, roomName } = await getAccessToken();
+                
+                // Create local video track
+                localTrack = await Twilio.Video.createLocalVideoTrack();
+                
+                // Connect to room
+                room = await Twilio.Video.connect(token, {
+                    name: roomName,
+                    tracks: [localTrack]
+                });
+
+                showStatus('Connected to room: ' + room.name);
+                
+                // Enable control buttons
+                document.getElementById('disconnectBtn').disabled = false;
+                document.getElementById('toggleVideoBtn').disabled = false;
+                document.getElementById('toggleAudioBtn').disabled = false;
+                document.getElementById('connectBtn').disabled = true;
+
+                // Display local video
+                displayLocalVideo();
+
+                // Handle existing participants
+                room.participants.forEach(participant => {
+                    handleParticipant(participant);
+                });
+
+                // Handle new participants
+                room.on('participantConnected', handleParticipant);
+                
+                // Handle participants leaving
+                room.on('participantDisconnected', participant => {
+                    console.log('Participant disconnected:', participant.identity);
+                    removeParticipantVideo(participant);
+                    showStatus('Participant left: ' + participant.identity);
+                });
+
+                // Handle room disconnection
+                room.on('disconnected', () => {
+                    console.log('Disconnected from room');
+                    localTrack.stop();
+                    remoteTracks.forEach(track => track.stop());
+                    remoteTracks.clear();
+                    document.getElementById('videoGrid').innerHTML = '';
+                });
+
+            } catch (error) {
+                showStatus('Connection error: ' + error.message, true);
+                console.error('Twilio connection error:', error);
+            }
+        }
+
+        function displayLocalVideo() {
+            const videoGrid = document.getElementById('videoGrid');
+            
+            const videoContainer = document.createElement('div');
+            videoContainer.className = 'video-container local-video';
+            
+            const videoElement = localTrack.attach();
+            videoElement.className = 'video-element';
+            
+            const label = document.createElement('div');
+            label.className = 'video-label';
+            label.textContent = 'You';
+            
+            videoContainer.appendChild(videoElement);
+            videoContainer.appendChild(label);
+            videoGrid.appendChild(videoContainer);
+        }
+
+        function handleParticipant(participant) {
+            console.log('Participant connected:', participant.identity);
+            showStatus('Participant joined: ' + participant.identity);
+            
+            participant.tracks.forEach(publication => {
+                if (publication.isSubscribed) {
+                    handleTrack(publication.track, participant);
+                }
+            });
+            
+            participant.on('trackSubscribed', track => {
+                handleTrack(track, participant);
+            });
+            
+            participant.on('trackUnsubscribed', track => {
+                track.detach().forEach(element => element.remove());
+            });
+        }
+
+        function handleTrack(track, participant) {
+            if (track.kind === 'video') {
+                const videoGrid = document.getElementById('videoGrid');
+                
+                const videoContainer = document.createElement('div');
+                videoContainer.className = 'video-container remote-video';
+                videoContainer.id = `participant-${participant.identity}`;
+                
+                const videoElement = track.attach();
+                videoElement.className = 'video-element';
+                
+                const label = document.createElement('div');
+                label.className = 'video-label';
+                label.textContent = participant.identity;
+                
+                videoContainer.appendChild(videoElement);
+                videoContainer.appendChild(label);
+                videoGrid.appendChild(videoContainer);
+                
+                remoteTracks.set(participant.identity, track);
+            }
+        }
+
+        function removeParticipantVideo(participant) {
+            const participantElement = document.getElementById(`participant-${participant.identity}`);
+            if (participantElement) {
+                participantElement.remove();
+            }
+            remoteTracks.delete(participant.identity);
+        }
+
+        function disconnectFromRoom() {
+            if (room) {
+                room.disconnect();
+                room = null;
+                localTrack = null;
+                
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('toggleVideoBtn').disabled = true;
+                document.getElementById('toggleAudioBtn').disabled = true;
+                document.getElementById('connectBtn').disabled = false;
+                
+                document.getElementById('videoGrid').innerHTML = '';
+                showStatus('Disconnected from room');
+            }
+        }
+
+        function toggleVideo() {
+            if (localTrack) {
+                if (isVideoMuted) {
+                    localTrack.enable();
+                    showStatus('Video enabled');
+                } else {
+                    localTrack.disable();
+                    showStatus('Video disabled');
+                }
+                isVideoMuted = !isVideoMuted;
+                document.getElementById('toggleVideoBtn').textContent = isVideoMuted ? '📹 Enable Video' : '📹 Disable Video';
+            }
+        }
+
+        function toggleAudio() {
+            if (localTrack) {
+                if (isAudioMuted) {
+                    localTrack.enable();
+                    showStatus('Audio enabled');
+                } else {
+                    localTrack.disable();
+                    showStatus('Audio disabled');
+                }
+                isAudioMuted = !isAudioMuted;
+                document.getElementById('toggleAudioBtn').textContent = isAudioMuted ? '🎤 Enable Audio' : '🎤 Disable Audio';
+            }
+        }
+
+        // Auto-fill demo credentials for testing (remove in production)
+        window.addEventListener('load', () => {
+            // You can add demo credentials here for quick testing
+            // document.getElementById('accountSid').value = 'ACxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+            // document.getElementById('apiKey').value = 'SKxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+            // document.getElementById('apiSecret').value = 'your-api-secret';
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (room) {
+                room.disconnect();
+            }
+        });
+    </script>
+</body>
+</html>

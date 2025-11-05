@@ -42,7 +42,9 @@ import { useParams, useSearchParams, useRouter } from "next/navigation"
 import { UserMenu } from "@/components/user-menu";
 import io from "socket.io-client"
 import { SOCKET_URL } from "@/lib/config"
-import JitsiVideoCall from "@/components/jitsi-video-call"
+import VideoCallButton from "@/components/video-call-button"
+import { useStreamVideo } from "@/hooks/useStreamVideo"
+import { StreamVideoProvider } from "@/components/stream-video-provider"
 
 interface Message {
   id: string
@@ -72,6 +74,8 @@ interface User {
 }
 
 export default function ChatPage() {
+  const [streamToken, setStreamToken] = useState<string>('');
+  const [isStreamReady, setIsStreamReady] = useState(false);
   const params = useParams()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -81,6 +85,7 @@ export default function ChatPage() {
   // Add error boundary and loading states
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -92,10 +97,7 @@ export default function ChatPage() {
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
-  const [videoCallTargetUser, setVideoCallTargetUser] = useState<string | undefined>(undefined);
-  const [isGroupVideoCall, setIsGroupVideoCall] = useState(false);
-  const [isAudioCall, setIsAudioCall] = useState(false);
+  const { config, isLoading: isVideoLoading, error: videoError, generateToken, createCall, endCall } = useStreamVideo();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showUserSuggestions, setShowUserSuggestions] = useState(false);
   const [userSuggestions, setUserSuggestions] = useState<User[]>([]);
@@ -103,12 +105,32 @@ export default function ChatPage() {
   const [typingQuery, setTypingQuery] = useState("");
   const [privateChatTarget, setPrivateChatTarget] = useState<User | null>(null);
   const [showPrivateUserSuggestions, setShowPrivateUserSuggestions] = useState(false);
+  const [videoCallTargetUser, setVideoCallTargetUser] = useState<string>('');
+  const [isGroupVideoCall, setIsGroupVideoCall] = useState(false);
+  const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
+  const [isAudioCall, setIsAudioCall] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const socketRef = useRef<any>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Retry connection function
+  const retryConnection = () => {
+    setRetryCount(prev => prev + 1);
+    setError(null);
+    setIsLoading(true);
+    
+    // Reset socket connection
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+    
+    // Reload the connection logic
+    window.location.reload();
+  };
 
   // Encryption/decryption
   const encryptMessage = (text: string): string => {
@@ -155,7 +177,42 @@ export default function ChatPage() {
          setIsConnected(true);
          setIsLoading(false);
          console.log("[DEBUG] Connected to server");
+         
+         // Fetch Stream Video token
+         fetchStreamToken();
        });
+       
+       // Fetch Stream Video token
+       const fetchStreamToken = async () => {
+         try {
+           const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/stream/token`, {
+             method: 'POST',
+             headers: {
+               'Content-Type': 'application/json',
+             },
+             body: JSON.stringify({ 
+               userId: username,
+               userName: username 
+             }),
+           });
+           
+           if (response.ok) {
+             const data = await response.json();
+             setStreamToken(data.token);
+             setIsStreamReady(true);
+           } else {
+             console.error('Failed to fetch Stream Video token, using fallback');
+             // Use fallback token to allow chat to work
+             setStreamToken('fallback-token');
+             setIsStreamReady(true);
+           }
+         } catch (error) {
+           console.error('Error fetching Stream Video token, using fallback:', error);
+           // Use fallback token to allow chat to work
+           setStreamToken('fallback-token');
+           setIsStreamReady(true);
+         }
+       };
        
        socket.on("disconnect", () => {
          setIsConnected(false);
@@ -164,8 +221,15 @@ export default function ChatPage() {
        
        socket.on("connect_error", (error) => {
          console.error("[DEBUG] Connection error:", error);
-         setError("Failed to connect to server");
+         setError(`Failed to connect to server: ${error.message}. Please check if the backend server is running on port 3001.`);
          setIsLoading(false);
+         // Allow user to retry connection
+         setTimeout(() => {
+           if (socketRef.current && !socketRef.current.connected) {
+             console.log("[DEBUG] Attempting to reconnect...");
+             socketRef.current.connect();
+           }
+         }, 3000);
        });
        
        socket.emit("joinSession", { sessionId, username });
@@ -363,6 +427,14 @@ export default function ChatPage() {
   };
 
   // Handle emoji insertion
+  const endVideoCall = () => {
+    setVideoCallTargetUser('');
+    setIsGroupVideoCall(false);
+    setIsVideoCallOpen(false);
+    setIsAudioCall(false);
+    endCall();
+  };
+
   const insertEmoji = (emoji: string) => {
     if (inputRef.current) {
       const currentValue = message;
@@ -497,27 +569,51 @@ export default function ChatPage() {
     return colors[index];
   };
 
-  // Video calling functions
-  const startVideoCall = (targetUserId?: string) => {
-    setVideoCallTargetUser(targetUserId);
-    setIsGroupVideoCall(!targetUserId);
-    setIsVideoCallOpen(true);
-    setIsAudioCall(false);
+  // Stream Video calling functions
+  const startVideoCall = async (targetUserId?: string) => {
+    try {
+      const callId = `${sessionId}-${Date.now()}`;
+      await createCall(callId, `Video Call ${callId}`, targetUserId ? [targetUserId] : users.map(u => u.id));
+      // Share call link in chat
+      const callLink = `${window.location.origin}/video-call/${callId}`;
+      const message = targetUserId 
+        ? `📹 Started a private video call with ${targetUserId}: ${callLink}`
+        : `📹 Started a group video call: ${callLink}`;
+      
+      if (socketRef.current) {
+        socketRef.current.emit('sendMessage', {
+          sessionId,
+          message: encryptMessage(message),
+          username,
+          isSystemMessage: true
+        });
+      }
+    } catch (error) {
+      console.error('Failed to start video call:', error);
+    }
   };
 
-  // Audio calling functions
-  const startAudioCall = (targetUserId?: string) => {
-    setVideoCallTargetUser(targetUserId);
-    setIsGroupVideoCall(!targetUserId);
-    setIsVideoCallOpen(true);
-    setIsAudioCall(true);
-  };
-
-  const endVideoCall = () => {
-    setIsVideoCallOpen(false);
-    setVideoCallTargetUser(undefined);
-    setIsGroupVideoCall(false);
-    setIsAudioCall(false);
+  const startAudioCall = async (targetUserId?: string) => {
+    try {
+      const callId = `${sessionId}-${Date.now()}`;
+      await createCall(callId, `Audio Call ${callId}`, targetUserId ? [targetUserId] : users.map(u => u.id));
+      // Share call link in chat
+      const callLink = `${window.location.origin}/video-call/${callId}`;
+      const message = targetUserId 
+        ? `📞 Started a private audio call with ${targetUserId}: ${callLink}`
+        : `📞 Started a group audio call: ${callLink}`;
+      
+      if (socketRef.current) {
+        socketRef.current.emit('sendMessage', {
+          sessionId,
+          message: encryptMessage(message),
+          username,
+          isSystemMessage: true
+        });
+      }
+    } catch (error) {
+      console.error('Failed to start audio call:', error);
+    }
   };
 
   // Loading state
@@ -737,12 +833,24 @@ export default function ChatPage() {
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-gradient-to-r hover:from-slate-100 hover:to-blue-100 dark:hover:from-slate-700 dark:hover:to-blue-900/30 transition-all duration-200" title="Search messages">
                 <Search className="w-5 h-5 text-slate-600 dark:text-slate-300" />
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gradient-to-r hover:from-emerald-100 hover:to-teal-100 dark:hover:from-emerald-900/30 dark:hover:to-teal-900/30 transition-all duration-200" onClick={() => startAudioCall()} title="Start group audio call">
-                <Phone className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30 transition-all duration-200" onClick={() => startVideoCall()} title="Start group video call">
-                <Video className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              </Button>
+              <VideoCallButton 
+                sessionId={sessionId} 
+                currentUser={{
+                  id: username || '',
+                  name: username || ''
+                }}
+                targetUsers={users.map(user => ({
+                  id: user.id,
+                  name: user.name
+                }))}
+                isPrivate={false}
+                onCallStart={(callId) => {
+                  console.log('Call started:', callId);
+                }}
+                onCallEnd={() => {
+                  console.log('Call ended');
+                }}
+              />
               <UserMenu />
             </div>
           </div>
@@ -1092,16 +1200,614 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Video Call Component */}
-      <JitsiVideoCall
-        isOpen={isVideoCallOpen}
-        onClose={endVideoCall}
-        sessionId={sessionId}
-        username={username}
-        targetUserId={videoCallTargetUser}
-        isGroupCall={isGroupVideoCall}
-        isAudioOnly={isAudioCall}
-      />
+
+    </div>
+  );
+
+  // Show loading or error state
+  if (isLoading && !error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center animate-pulse">
+            <Video className="w-8 h-8 text-white" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Connecting to Secure Chat...</h3>
+          <p className="text-sm text-muted-foreground">Please wait while we establish your encrypted connection</p>
+          <div className="mt-4 text-xs text-muted-foreground">
+            Attempting to connect to server...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state with retry option
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-red-500 to-orange-500 rounded-2xl flex items-center justify-center">
+            <WifiOff className="w-8 h-8 text-white" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Connection Failed</h3>
+          <p className="text-sm text-muted-foreground mb-4">{error}</p>
+          <div className="space-y-3">
+            <Button 
+              onClick={retryConnection}
+              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Retrying...
+                </>
+              ) : (
+                <>
+                  <Wifi className="w-4 h-4 mr-2" />
+                  Retry Connection
+                </>
+              )}
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => router.push('/dashboard')}
+              className="w-full"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
+          {retryCount > 0 && (
+            <p className="text-xs text-muted-foreground mt-4">
+              Retry attempt: {retryCount}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Wrap with Stream Video provider if token is ready
+  if (!isStreamReady || !streamToken) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center">
+            <Video className="w-8 h-8 text-white" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Initializing Video Chat...</h3>
+          <p className="text-sm text-muted-foreground">Please wait while we prepare your secure video connection</p>
+          <div className="mt-4">
+            <button 
+              onClick={() => {
+                // Skip Stream Video setup and continue to regular chat
+                setIsStreamReady(true);
+                setStreamToken('dummy-token');
+              }}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Skip Video Setup (Continue to Chat)
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Use fallback mode if token is dummy (Stream Video disabled)
+  if (streamToken === 'dummy-token') {
+    return <ChatInterface />;
+  }
+
+  return (
+    <StreamVideoProvider 
+      apiKey={process.env.NEXT_PUBLIC_STREAM_API_KEY!} 
+      token={streamToken}
+      user={{
+        id: username || 'anonymous',
+        name: username || 'Anonymous User',
+        image: `https://getstream.io/random_svg/?name=${username || 'Anonymous'}`,
+      }}
+    >
+      <ChatInterface />
+    </StreamVideoProvider>
+  );
+
+  function ChatInterface() {
+    return (
+      <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900">
+        {/* Sidebar */}
+        <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-gradient-to-b from-white/90 via-white/80 to-white/90 dark:from-slate-800/90 dark:via-slate-800/80 dark:to-slate-800/90 backdrop-blur-2xl border-r border-slate-200/50 dark:border-slate-700/30 flex flex-col shadow-2xl overflow-hidden`}>
+          <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/30">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-foreground">Chat Room</h2>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="rounded-full hover:bg-gradient-to-r hover:from-slate-100 hover:to-blue-100 dark:hover:from-slate-700 dark:hover:to-blue-900/30 transition-all duration-200"
+                >
+                  <Users className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Connection Status */}
+            <div className="flex items-center space-x-2 text-sm">
+              {isConnected ? (
+                <>
+                  <div className="w-3 h-3 bg-green-500 rounded-full shadow-lg shadow-green-500/50 animate-pulse"></div>
+                  <span className="font-medium text-green-700 dark:text-green-400">Connected</span>
+                </>
+              ) : (
+                <>
+                  <div className="w-3 h-3 bg-red-500 rounded-full shadow-lg shadow-red-500/50"></div>
+                  <span className="text-sm font-bold text-red-700 dark:text-red-400">Disconnected</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Online Users */}
+          <ScrollArea className="flex-1 p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-sm text-muted-foreground mb-6">
+                <span className="font-medium tracking-wide">ONLINE USERS</span>
+                <Badge variant="secondary" className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-0">
+                  {userCount}
+                </Badge>
+              </div>
+              
+              {/* Current User */}
+              <div className="flex items-center space-x-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-900/30 dark:via-teal-900/30 dark:to-cyan-900/30 border border-emerald-200/50 dark:border-emerald-700/30 shadow-lg hover:shadow-xl transition-all duration-300 group">
+                <div className="relative">
+                  <Avatar className="w-14 h-14 ring-3 ring-white/60 dark:ring-slate-700/60 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                    <AvatarImage src={`https://getstream.io/random_svg/?name=${username}`} alt={username} />
+                    <AvatarFallback className="bg-gradient-to-br from-emerald-400 to-teal-500 text-white font-bold text-lg">
+                      {username?.charAt(0).toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full border-2 border-white dark:border-slate-800 shadow-lg"></div>
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground text-lg">{username}</p>
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium flex items-center">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></div>
+                    You
+                  </p>
+                </div>
+                <Badge variant="secondary" className="bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700">
+                  Host
+                </Badge>
+              </div>
+
+              {/* Other Users */}
+              {users.filter(user => user.id !== username).map((user) => (
+                <div key={user.id} className="flex items-center space-x-4 p-4 rounded-2xl bg-gradient-to-r from-white/60 via-blue-50/60 to-indigo-50/60 dark:from-slate-700/60 dark:via-blue-900/20 dark:to-indigo-900/20 backdrop-blur-sm border border-slate-200/50 dark:border-slate-600/50 hover:from-white/80 hover:via-blue-100/80 hover:to-indigo-100/80 dark:hover:from-slate-600/60 dark:hover:via-blue-800/30 dark:hover:to-indigo-800/30 shadow-lg hover:shadow-xl transition-all duration-300 group">
+                  <div className="relative">
+                    <Avatar className="w-12 h-12 ring-2 ring-white/60 dark:ring-slate-700/60 shadow-md group-hover:scale-105 transition-transform duration-300">
+                      <AvatarImage src={user.avatar || `https://getstream.io/random_svg/?name=${user.name}`} alt={user.name} />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-400 to-indigo-500 text-white font-semibold">
+                        {user.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-slate-800 shadow-lg ${
+                      user.status === 'online' ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 
+                      user.status === 'away' ? 'bg-gradient-to-r from-yellow-500 to-orange-500' : 
+                      'bg-gradient-to-r from-gray-400 to-slate-500'
+                    }`}></div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-foreground">{user.name}</p>
+                    <p className="text-sm text-muted-foreground flex items-center">
+                      <div className={`w-2 h-2 rounded-full mr-2 ${
+                        user.status === 'online' ? 'bg-green-500' : 
+                        user.status === 'away' ? 'bg-yellow-500' : 
+                        'bg-gray-400'
+                      }`}></div>
+                      {user.status}
+                      {user.isTyping && <span className="ml-2 text-xs text-blue-500 animate-pulse">typing...</span>}
+                    </p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => startVideoCall(user.id)}
+                      className="rounded-full bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 hover:from-blue-200 hover:to-cyan-200 dark:hover:from-blue-800/30 dark:hover:to-cyan-800/30 transition-all duration-200 w-10 h-10 p-0 shadow-md hover:shadow-lg"
+                      title="Start video call"
+                    >
+                      <Video className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => startAudioCall(user.id)}
+                      className="rounded-full bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 hover:from-green-200 hover:to-emerald-200 dark:hover:from-green-800/30 dark:hover:to-emerald-800/30 transition-all duration-200 w-10 h-10 p-0 shadow-md hover:shadow-lg"
+                      title="Start audio call"
+                    >
+                      <Phone className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col bg-slate-50/50 dark:bg-slate-900/40 backdrop-blur-sm">
+          {/* Chat Header */}
+          <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/30 bg-gradient-to-r from-white/90 via-white/80 to-white/90 dark:from-slate-800/90 dark:via-slate-800/80 dark:to-slate-800/90 backdrop-blur-2xl shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Button variant="ghost" size="icon" className="lg:hidden rounded-full hover:bg-gradient-to-r hover:from-slate-100 hover:to-blue-100 dark:hover:from-slate-700 dark:hover:to-blue-900/30 transition-all duration-200" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                  <Users className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+                </Button>
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground tracking-tight bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                    Secure Chat
+                  </h1>
+                  <p className="text-sm text-muted-foreground font-light flex items-center">
+                    <Shield className="w-3 h-3 mr-1.5 text-emerald-500" />
+                    Session: {sessionId}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSearch(!showSearch)}
+                  className="rounded-full bg-gradient-to-r from-slate-100 to-blue-100 dark:from-slate-700 dark:to-blue-900/30 hover:from-slate-200 hover:to-blue-200 dark:hover:from-slate-600 dark:hover:to-blue-800/30 transition-all duration-200 border-slate-200/50 dark:border-slate-600/50"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  Search
+                </Button>
+                <VideoCallButton 
+                  onVideoCallStart={() => startVideoCall()}
+                  onAudioCallStart={() => startAudioCall()}
+                  targetUserId={videoCallTargetUser}
+                  isGroupCall={isGroupVideoCall}
+                  sessionId={sessionId}
+                  currentUser={username}
+                />
+                <UserMenu />
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            {showSearch && (
+              <div className="mt-4">
+                <Input
+                  type="text"
+                  placeholder="Search messages..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="rounded-full bg-white/60 dark:bg-slate-700/60 backdrop-blur-sm border-slate-200/50 dark:border-slate-600/50 focus:border-blue-400 focus:ring-blue-400/30"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Messages Area */}
+          <ScrollArea className="flex-1 p-6">
+            <div className="space-y-4 max-w-4xl mx-auto">
+              {messages
+                .filter(msg => 
+                  !searchQuery || 
+                  msg.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  msg.userName.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex space-x-4 p-6 rounded-2xl transition-all duration-300 hover:shadow-lg ${
+                    msg.userId === username 
+                      ? 'bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/30 dark:via-indigo-900/30 dark:to-purple-900/30 border border-blue-200/50 dark:border-blue-700/30 ml-12 shadow-md'
+                      : 'bg-gradient-to-r from-white/60 via-slate-50/60 to-blue-50/60 dark:from-slate-700/60 dark:via-slate-800/60 dark:to-blue-900/20 backdrop-blur-sm border border-slate-200/50 dark:border-slate-600/50 mr-12 shadow-md'
+                  }`}
+                >
+                  <Avatar className="w-12 h-12 ring-2 ring-white/60 dark:ring-slate-700/60 shadow-lg">
+                    <AvatarImage src={`https://getstream.io/random_svg/?name=${msg.userName}`} alt={msg.userName} />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-400 to-indigo-500 text-white font-semibold">
+                      {msg.userName.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <span className="font-semibold text-foreground text-lg">{msg.userName}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {msg.encrypted && (
+                          <Badge variant="secondary" className="text-xs bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700">
+                            <Shield className="w-3 h-3 mr-1" />
+                            Encrypted
+                          </Badge>
+                        )}
+                        {msg.isPrivate && (
+                          <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700">
+                            <AtSign className="w-3 h-3 mr-1" />
+                            Private
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={msg.status === 'sent' ? 'secondary' : 'default'} className="text-xs">
+                          {msg.status === 'sending' && <Clock className="w-3 h-3 mr-1" />}
+                          {msg.status === 'sent' && <CheckCircle className="w-3 h-3 mr-1" />}
+                          {msg.status === 'delivered' && <CheckCircle className="w-3 h-3 mr-1" />}
+                          {msg.status === 'read' && <CheckCircle className="w-3 h-3 mr-1" />}
+                          {msg.status}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setReplyingTo(msg)}
+                          className="rounded-full hover:bg-gradient-to-r hover:from-slate-100 hover:to-blue-100 dark:hover:from-slate-700 dark:hover:to-blue-900/30 transition-all duration-200 w-8 h-8 p-0"
+                          title="Reply to this message"
+                        >
+                          <Reply className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {msg.replyTo && (
+                      <div className="p-3 bg-slate-100/50 dark:bg-slate-700/30 rounded-xl border-l-4 border-blue-400 dark:border-blue-500">
+                        <p className="text-sm text-muted-foreground mb-1">Replying to message:</p>
+                        <p className="text-sm text-foreground italic">
+                          {messages.find(m => m.id === msg.replyTo)?.content ? 
+                            decryptMessage(messages.find(m => m.id === msg.replyTo)!.content).substring(0, 100) + '...' : 
+                            'Original message not found'
+                          }
+                        </p>
+                      </div>
+                    )}
+                    
+                    <p className="text-foreground text-base leading-relaxed break-words">
+                      {decryptMessage(msg.content)}
+                    </p>
+                    
+                    {msg.fileUrl && (
+                      <div className="mt-3 p-4 bg-white/50 dark:bg-slate-700/30 rounded-xl border border-slate-200/50 dark:border-slate-600/50 backdrop-blur-sm">
+                        {msg.fileType?.startsWith('image/') ? (
+                          <img src={msg.fileUrl} alt={msg.fileName} className="max-w-xs rounded-lg shadow-md" />
+                        ) : (
+                          <div className="flex items-center space-x-3">
+                            <File className="w-8 h-8 text-blue-500" />
+                            <div>
+                              <p className="font-medium text-foreground">{msg.fileName}</p>
+                              <p className="text-sm text-muted-foreground">{msg.fileType}</p>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(msg.fileUrl, '_blank')}
+                              className="ml-auto"
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              Download
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {msg.reactions && msg.reactions.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {msg.reactions.map((reaction, index) => (
+                          <Badge key={index} variant="secondary" className="text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600">
+                            {reaction.emoji} {reaction.users.length}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+
+          {/* Typing Indicator */}
+          {typingUsers.length > 0 && (
+            <div className="px-6 py-3 bg-gradient-to-r from-blue-50/60 via-indigo-50/60 to-purple-50/60 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 backdrop-blur-sm border-t border-slate-200/50 dark:border-slate-700/30">
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                </div>
+                <span>
+                  {typingUsers.length === 1 
+                    ? `${typingUsers[0]} is typing...` 
+                    : `${typingUsers.length} people are typing...`
+                  }
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Reply Preview */}
+          {replyingTo && (
+            <div className="px-6 py-3 bg-gradient-to-r from-blue-50/60 via-indigo-50/60 to-purple-50/60 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 backdrop-blur-sm border-t border-slate-200/50 dark:border-slate-700/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="text-sm text-muted-foreground">Replying to:</div>
+                  <div className="text-sm font-medium text-foreground">
+                    {replyingTo.userName}: {decryptMessage(replyingTo.content).substring(0, 50)}...
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setReplyingTo(null)}
+                  className="rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 w-8 h-8 p-0"
+                >
+                  <X className="w-4 h-4 text-red-500" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Private Chat Target */}
+          {privateChatTarget && (
+            <div className="px-6 py-3 bg-gradient-to-r from-purple-50/60 via-pink-50/60 to-rose-50/60 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-rose-900/20 backdrop-blur-sm border-t border-slate-200/50 dark:border-slate-700/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="text-sm text-muted-foreground">Private message to:</div>
+                  <div className="text-sm font-medium text-foreground">
+                    {privateChatTarget.name}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setPrivateChatTarget(null)}
+                  className="rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 w-8 h-8 p-0"
+                >
+                  <X className="w-4 h-4 text-red-500" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Message Input */}
+          <div className="p-6 bg-gradient-to-r from-white/90 via-white/80 to-white/90 dark:from-slate-800/90 dark:via-slate-800/80 dark:to-slate-800/90 backdrop-blur-2xl border-t border-slate-200/50 dark:border-slate-700/30">
+            {/* Emoji Picker */}
+            {showEmojiPicker && (
+              <div ref={emojiPickerRef} className="absolute bottom-32 left-6 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-slate-200/50 dark:border-slate-700/30 z-50 max-w-sm">
+                <div className="grid grid-cols-8 gap-2 mb-4">
+                  {commonEmojis.map((emoji, index) => (
+                    <button
+                      key={index}
+                      onClick={() => insertEmoji(emoji)}
+                      className="w-10 h-10 rounded-xl hover:bg-gradient-to-br hover:from-yellow-100 hover:to-orange-100 dark:hover:from-yellow-900/50 dark:hover:to-orange-900/50 transition-all duration-200 flex items-center justify-center text-xl hover:scale-110 shadow-sm hover:shadow-md"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+                <div className="border-t border-slate-200/50 dark:border-slate-700/50 pt-3">
+                  <p className="text-xs text-muted-foreground font-medium text-center">Click an emoji to insert it ✨</p>
+                </div>
+              </div>
+            )}
+
+            {/* User Suggestions */}
+            {showUserSuggestions && (
+              <div ref={suggestionsRef} className="absolute bottom-32 left-6 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-slate-200/50 dark:border-slate-700/30 z-50 max-w-sm max-h-64 overflow-y-auto">
+                <div className="space-y-2">
+                  {userSuggestions.map((user) => (
+                    <button
+                      key={user.id}
+                      onClick={() => {
+                        insertMention(user.name);
+                        setShowUserSuggestions(false);
+                      }}
+                      className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-all duration-200 text-left"
+                    >
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={user.avatar || `https://getstream.io/random_svg/?name=${user.name}`} alt={user.name} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-400 to-indigo-500 text-white">
+                          {user.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{user.name}</p>
+                        <p className="text-sm text-muted-foreground flex items-center">
+                          <div className={`w-2 h-2 rounded-full mr-2 ${
+                            user.status === 'online' ? 'bg-green-500' : 
+                            user.status === 'away' ? 'bg-yellow-500' : 
+                            'bg-gray-400'
+                          }`}></div>
+                          {user.status}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center space-x-4 max-w-4xl mx-auto">
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={handleFileUpload}
+                accept="image/*,application/pdf,.doc,.docx,video/*,.mp3,.wav"
+              />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-full bg-gradient-to-r from-slate-100 to-blue-100 dark:from-slate-700 dark:to-blue-900/30 hover:from-slate-200 hover:to-blue-200 dark:hover:from-slate-600 dark:hover:to-blue-800/30 transition-all duration-200 w-12 h-12 shadow-md hover:shadow-lg"
+                title="Attach files"
+              >
+                <Paperclip className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+              </Button>
+              <div className="flex-1 relative">
+                <Input
+                  ref={inputRef}
+                  type="text"
+                  value={message}
+                  onChange={handlePrivateChatInput}
+                  placeholder={privateChatTarget ? `Private message to ${privateChatTarget.name}...` : "Type your secure message... Use @ to mention someone (use /w username for private)"}
+                  className="pr-16 py-4 rounded-3xl border-slate-200/60 dark:border-slate-600/60 bg-gradient-to-r from-white/60 to-blue-50/60 dark:from-slate-700/60 dark:to-blue-900/20 backdrop-blur-sm focus:border-blue-400 focus:ring-blue-400/30 text-base font-medium placeholder:text-slate-500 dark:placeholder:text-slate-400 shadow-inner focus:shadow-lg transition-all duration-200"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      // Stop typing indicator
+                      setIsTyping(false);
+                      if (socketRef.current) {
+                        socketRef.current.emit('typingStop', { sessionId, username });
+                      }
+                      sendMessageHandler();
+                    }
+                  }}
+                />
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 rounded-full bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/30 dark:to-orange-900/30 hover:from-yellow-200 hover:to-orange-200 dark:hover:from-yellow-800/30 dark:hover:to-orange-800/30 transition-all duration-200 w-10 h-10 shadow-md hover:shadow-lg"
+                  title="Insert emoji"
+                >
+                  <Smile className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                </Button>
+              </div>
+              <Button 
+                onClick={sendMessageHandler}
+                disabled={!message.trim()}
+                className="bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 hover:from-blue-600 hover:via-cyan-600 hover:to-teal-600 text-white px-6 py-4 rounded-3xl shadow-2xl shadow-blue-500/40 disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 hover:shadow-blue-500/50 hover:scale-105"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+function ChatContent({ sessionId, username }: { sessionId: string; username: string }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900">
+      <div className="text-center py-20">
+        <h1 className="text-4xl font-bold text-foreground mb-4">Stream Video Integration</h1>
+        <p className="text-lg text-muted-foreground mb-8">Video chat is ready for session: {sessionId}</p>
+        <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center">
+          <Video className="w-8 h-8 text-white" />
+        </div>
+        <p className="text-sm text-muted-foreground">Stream Video provider is now active for user: {username}</p>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Connection Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Socket.IO Connection Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="logs"></div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const logsDiv = document.getElementById('logs');
+        
+        function log(message) {
+            const p = document.createElement('p');
+            p.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            logsDiv.appendChild(p);
+        }
+        
+        log('Attempting to connect to http://localhost:3001');
+        
+        const socket = io('http://localhost:3001', {
+            transports: ['websocket', 'polling'],
+            timeout: 5000
+        });
+        
+        socket.on('connect', function() {
+            statusDiv.innerHTML = '<span style="color: green;">✓ Connected!</span>';
+            log('Successfully connected to server');
+            log('Socket ID: ' + socket.id);
+        });
+        
+        socket.on('connect_error', function(error) {
+            statusDiv.innerHTML = '<span style="color: red;">✗ Connection Error</span>';
+            log('Connection error: ' + error.message);
+            log('Error type: ' + error.type);
+        });
+        
+        socket.on('disconnect', function(reason) {
+            statusDiv.innerHTML = '<span style="color: orange;">⚠ Disconnected</span>';
+            log('Disconnected: ' + reason);
+        });
+        
+        socket.on('error', function(error) {
+            log('Socket error: ' + error);
+        });
+        
+        // Test reconnection
+        setTimeout(() => {
+            if (!socket.connected) {
+                log('Attempting manual reconnection...');
+                socket.connect();
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

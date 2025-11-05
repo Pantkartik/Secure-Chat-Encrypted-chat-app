@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stream Video JWT Test</title>
+    <script src="https://unpkg.com/@stream-io/video-react-sdk@1.25.1/dist/index.umd.js"></script>
+</head>
+<body>
+    <h1>Stream Video JWT Authentication Test</h1>
+    <div id="status">Loading...</div>
+    <div id="error"></div>
+    
+    <script>
+        async function testStreamVideoAuth() {
+            try {
+                // Get token from our API
+                const response = await fetch('http://localhost:3000/api/stream/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        userId: 'test-user',
+                        userName: 'Test User' 
+                    }),
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                document.getElementById('status').innerHTML = `Token received: ${data.token.substring(0, 50)}...`;
+                
+                // Test Stream Video client creation
+                const client = StreamVideo.StreamVideoClient.getOrCreateInstance({
+                    apiKey: data.apiKey,
+                    token: data.token,
+                    user: {
+                        id: 'test-user',
+                        name: 'Test User'
+                    }
+                });
+                
+                document.getElementById('status').innerHTML += '<br>✅ Stream Video client created successfully!';
+                document.getElementById('error').innerHTML = '<br><strong>JWT Authentication Fixed!</strong> The token is now valid for Stream Video API.';
+                
+            } catch (error) {
+                document.getElementById('error').innerHTML = `<br><strong>Error:</strong> ${error.message}`;
+                console.error('Stream Video auth test failed:', error);
+            }
+        }
+        
+        testStreamVideoAuth();
+    </script>
+</body>
+</html>

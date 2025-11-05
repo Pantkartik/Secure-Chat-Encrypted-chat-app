@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connection Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Socket.IO Connection Test</h1>
+    <div id="status">Not connected</div>
+    <div id="logs"></div>
+    
+    <script>
+        const status = document.getElementById('status');
+        const logs = document.getElementById('logs');
+        
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logs.innerHTML += `<div>${timestamp}: ${message}</div>`;
+        }
+        
+        addLog('Starting connection test...');
+        
+        // Test Socket.IO connection
+        const socket = io('http://localhost:3001');
+        
+        socket.on('connect', () => {
+            status.textContent = 'Connected!';
+            addLog(`✅ Socket connected: ${socket.id}`);
+            
+            // Test joining a session
+            socket.emit('joinSession', { sessionId: 'TEST123', username: 'testuser' });
+            addLog('📤 Sent joinSession event');
+        });
+        
+        socket.on('connect_error', (error) => {
+            status.textContent = 'Connection failed';
+            addLog(`❌ Connection error: ${error.message}`);
+        });
+        
+        socket.on('disconnect', (reason) => {
+            status.textContent = 'Disconnected';
+            addLog(`🔌 Disconnected: ${reason}`);
+        });
+        
+        socket.on('usersList', (users) => {
+            addLog(`✅ Received usersList: ${JSON.stringify(users)}`);
+        });
+        
+        socket.on('userJoined', (user) => {
+            addLog(`👤 User joined: ${JSON.stringify(user)}`);
+        });
+        
+        socket.on('userLeft', (user) => {
+            addLog(`👋 User left: ${JSON.stringify(user)}`);
+        });
+        
+        socket.on('userCountUpdate', (count) => {
+            addLog(`👥 User count: ${count}`);
+        });
+        
+        // Test sending a message after 3 seconds
+        setTimeout(() => {
+            if (socket.connected) {
+                socket.emit('sendMessage', {
+                    sessionId: 'TEST123',
+                    username: 'testuser',
+                    message: 'Hello from test!'
+                });
+                addLog('📤 Sent test message');
+            }
+        }, 3000);
+        
+        // Disconnect after 10 seconds
+        setTimeout(() => {
+            socket.disconnect();
+            addLog('🔌 Socket disconnected by test');
+        }, 10000);
+    </script>
+</body>
+</html>

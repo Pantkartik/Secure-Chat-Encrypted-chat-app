@@ -411,17 +411,7 @@ export default function VideoCall({
     }
   }
 
-  // Helper function to update connection quality
-  const updateConnectionQuality = (userId: string, quality: 'good' | 'poor' | 'disconnected') => {
-    setCallParticipants(prev => {
-      const updated = new Map(prev)
-      const participant = updated.get(userId)
-      if (participant) {
-        participant.connectionQuality = quality
-      }
-      return updated
-    })
-  }
+
 
   // Restart ICE connection
   const restartIceConnection = async (userId: string) => {
@@ -528,11 +518,7 @@ export default function VideoCall({
       })
       
       // Remove from participant map
-      setCallParticipants(prev => {
-        const updated = new Map(prev)
-        updated.delete(userId)
-        return updated
-      })
+      setCallParticipants(prev => prev.filter(p => p.id !== userId))
     }
   }
 

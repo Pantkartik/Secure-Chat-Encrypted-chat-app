@@ -1,0 +1,284 @@
+/* Daily Video Call Styles */
+.daily-video-call {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 400px;
+  height: 300px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.daily-video-call.minimized {
+  width: 200px;
+  height: 60px;
+}
+
+.daily-video-call.minimized .video-frame-container {
+  display: none;
+}
+
+.daily-video-call.minimized .video-call-controls {
+  display: none;
+}
+
+/* Header */
+.video-call-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #2d2d2d;
+  border-radius: 12px 12px 0 0;
+  border-bottom: 1px solid #444;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.participants-count {
+  color: #00ff88;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.loading-text {
+  color: #ffaa00;
+  font-size: 12px;
+  animation: pulse 1.5s infinite;
+}
+
+.header-right {
+  display: flex;
+  gap: 8px;
+}
+
+.header-button {
+  background: #444;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  padding: 6px 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.header-button:hover {
+  background: #555;
+  transform: translateY(-1px);
+}
+
+.leave-button {
+  background: #ff4757;
+}
+
+.leave-button:hover {
+  background: #ff3742;
+}
+
+/* Controls */
+.video-call-controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  background: #2d2d2d;
+  border-bottom: 1px solid #444;
+}
+
+.control-button {
+  background: #444;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-button:hover {
+  background: #555;
+  transform: scale(1.1);
+}
+
+.control-button.muted {
+  background: #ff4757;
+}
+
+.control-button.muted:hover {
+  background: #ff3742;
+}
+
+/* Video Frame */
+.video-frame-container {
+  flex: 1;
+  position: relative;
+  background: #000;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+}
+
+.video-frame {
+  width: 100%;
+  height: 100%;
+  border-radius: 0 0 12px 12px;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  z-index: 10;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #444;
+  border-top: 3px solid #00ff88;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Error State */
+.video-call-error {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 300px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.error-content {
+  padding: 20px;
+  text-align: center;
+}
+
+.error-content h3 {
+  color: #ff4757;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.error-content p {
+  color: #ccc;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.error-button {
+  background: #ff4757;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  padding: 8px 16px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.error-button:hover {
+  background: #ff3742;
+  transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .daily-video-call {
+    width: 100%;
+    height: 200px;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .daily-video-call.minimized {
+    width: 100%;
+    height: 60px;
+  }
+  
+  .video-call-header {
+    padding: 8px 12px;
+  }
+  
+  .video-call-controls {
+    padding: 8px;
+  }
+  
+  .control-button {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: light) {
+  .daily-video-call {
+    background: #ffffff;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  }
+  
+  .video-call-header,
+  .video-call-controls {
+    background: #f8f9fa;
+    border-bottom-color: #e9ecef;
+  }
+  
+  .header-button,
+  .control-button {
+    background: #e9ecef;
+    color: #495057;
+  }
+  
+  .header-button:hover,
+  .control-button:hover {
+    background: #dee2e6;
+  }
+  
+  .participants-count {
+    color: #28a745;
+  }
+  
+  .loading-text {
+    color: #ffc107;
+  }
+}

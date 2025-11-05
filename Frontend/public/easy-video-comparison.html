@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Video Calling Solutions Comparison</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            padding: 40px;
+        }
+
+        .solution-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .solution-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .solution-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .solution-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .difficulty-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .easy { background: #d4edda; color: #155724; }
+        .medium { background: #fff3cd; color: #856404; }
+        .hard { background: #f8d7da; color: #721c24; }
+
+        .features-list {
+            list-style: none;
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .features-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .features-list li:last-child {
+            border-bottom: none;
+        }
+
+        .check-icon { color: #28a745; }
+        .x-icon { color: #dc3545; }
+
+        .demo-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .demo-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .quick-start {
+            background: #e3f2fd;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 40px;
+            text-align: center;
+        }
+
+        .quick-start h2 {
+            color: #1565c0;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .recommendation {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            margin: 40px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .recommendation h2 {
+            margin-bottom: 15px;
+            font-size: 2em;
+        }
+
+        .comparison-table {
+            margin: 40px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .rating {
+            display: flex;
+            gap: 2px;
+        }
+
+        .star {
+            color: #ffc107;
+        }
+
+        .star.empty {
+            color: #ddd;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .comparison-grid {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            
+            .comparison-table {
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎥 Easy Video Calling Solutions</h1>
+            <p>Compare the simplest ways to add video calling to your app</p>
+        </div>
+
+        <div class="recommendation">
+            <h2>🏆 Our Recommendation</h2>
+            <p><strong>For beginners:</strong> Start with <strong>Whereby Embedded</strong> - just paste a room URL!</p>
+            <p><strong>For scalability:</strong> Use <strong>Daily.co</strong> - perfect balance of ease and features</p>
+            <p><strong>For enterprise:</strong> Choose <strong>Twilio Video</strong> - full control and reliability</p>
+        </div>
+
+        <div class="comparison-grid">
+            <div class="solution-card">
+                <div class="solution-icon">🏠</div>
+                <div class="solution-title">Whereby Embedded</div>
+                <div class="difficulty-badge easy">SUPER EASY</div>
+                <p>The absolute simplest way to add video calling. Just embed a room URL!</p>
+                
+                <ul class="features-list">
+                    <li><span class="check-icon">✓</span> No API keys needed</li>
+                    <li><span class="check-icon">✓</span> Works instantly</li>
+                    <li><span class="check-icon">✓</span> Beautiful UI out-of-box</li>
+                    <li><span class="check-icon">✓</span> Mobile responsive</li>
+                    <li><span class="check-icon">✓</span> Screen sharing included</li>
+                    <li><span class="x-icon">✗</span> Limited customization</li>
+                </ul>
+                
+                <a href="whereby-demo.html" class="demo-button" target="_blank">
+                    🚀 Try Whereby Demo
+                </a>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-icon">⚡</div>
+                <div class="solution-title">Daily.co</div>
+                <div class="difficulty-badge easy">EASY</div>
+                <p>Perfect balance of simplicity and features. Great for production apps!</p>
+                
+                <ul class="features-list">
+                    <li><span class="check-icon">✓</span> Simple API integration</li>
+                    <li><span class="check-icon">✓</span> Automatic room creation</li>
+                    <li><span class="check-icon">✓</span> Built-in recording</li>
+                    <li><span class="check-icon">✓</span> Screen sharing</li>
+                    <li><span class="check-icon">✓</span> Mobile SDKs</li>
+                    <li><span class="check-icon">✓</span> Analytics dashboard</li>
+                </ul>
+                
+                <a href="daily-co-demo.html" class="demo-button" target="_blank">
+                    ⚡ Try Daily.co Demo
+                </a>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-icon">📡</div>
+                <div class="solution-title">Twilio Video</div>
+                <div class="difficulty-badge medium">MODERATE</div>
+                <p>Enterprise-grade solution with full control and advanced features.</p>
+                
+                <ul class="features-list">
+                    <li><span class="check-icon">✓</span> Complete control</li>
+                    <li><span class="check-icon">✓</span> Enterprise reliability</li>
+                    <li><span class="check-icon">✓</span> Advanced analytics</li>
+                    <li><span class="check-icon">✓</span> Global infrastructure</li>
+                    <li><span class="check-icon">✓</span> Recording & compliance</li>
+                    <li><span class="x-icon">✗</span> More complex setup</li>
+                </ul>
+                
+                <a href="twilio-demo.html" class="demo-button" target="_blank">
+                    📡 Try Twilio Demo
+                </a>
+            </div>
+        </div>
+
+        <div class="quick-start">
+            <h2>🚀 Quick Start Guide</h2>
+            <p><strong>Want to add video calling in the next 30 minutes?</strong></p>
+            <p>1. Choose <strong>Whereby Embedded</strong> for instant results</p>
+            <p>2. Create a free Whereby account and room</p>
+            <p>3. Copy the room URL to your app</p>
+            <p>4. Embed it in an iframe - Done! 🎉</p>
+        </div>
+
+        <div class="comparison-table">
+            <h2 style="text-align: center; margin-bottom: 30px; color: #333;">📊 Detailed Comparison</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Whereby</th>
+                        <th>Daily.co</th>
+                        <th>Twilio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Setup Time</strong></td>
+                        <td>5 minutes ⭐⭐⭐⭐⭐</td>
+                        <td>15 minutes ⭐⭐⭐⭐</td>
+                        <td>30 minutes ⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Code Complexity</strong></td>
+                        <td>Minimal ⭐⭐⭐⭐⭐</td>
+                        <td>Low ⭐⭐⭐⭐</td>
+                        <td>Medium ⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Customization</strong></td>
+                        <td>⭐⭐</td>
+                        <td>⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Reliability</strong></td>
+                        <td>⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mobile Support</strong></td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pricing (Free Tier)</strong></td>
+                        <td>100 participants</td>
+                        <td>1,000 minutes</td>
+                        <td>25GB bandwidth</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Best For</strong></td>
+                        <td>Quick prototypes, simple apps</td>
+                        <td>Production apps, startups</td>
+                        <td>Enterprise, complex requirements</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="text-align: center; padding: 40px; background: #f8f9fa;">
+            <h2 style="color: #333; margin-bottom: 20px;">🎯 Ready to Choose?</h2>
+            <p style="font-size: 1.2em; color: #666; margin-bottom: 30px;">
+                Pick the solution that matches your needs and timeline. All demos are ready to test!
+            </p>
+            <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                <a href="whereby-demo.html" class="demo-button" target="_blank">
+                    🏠 Test Whereby
+                </a>
+                <a href="daily-co-demo.html" class="demo-button" target="_blank">
+                    ⚡ Test Daily.co
+                </a>
+                <a href="twilio-demo.html" class="demo-button" target="_blank">
+                    📡 Test Twilio
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,64 @@
+import { TextComposerMiddlewareExecutor } from './middleware';
+import { StateStore } from '../store';
+import type { TextComposerSuggestion } from './middleware/textComposer/types';
+import type { TextSelection } from './middleware/textComposer/types';
+import type { TextComposerState } from './middleware/textComposer/types';
+import type { Suggestions } from './middleware/textComposer/types';
+import type { MessageComposer } from './messageComposer';
+import type { CommandResponse, DraftMessage, LocalMessage, UserResponse } from '../types';
+export type TextComposerOptions = {
+    composer: MessageComposer;
+    message?: DraftMessage | LocalMessage;
+};
+export declare const textIsEmpty: (text: string) => boolean;
+export declare class TextComposer {
+    readonly composer: MessageComposer;
+    readonly state: StateStore<TextComposerState>;
+    middlewareExecutor: TextComposerMiddlewareExecutor;
+    constructor({ composer, message }: TextComposerOptions);
+    get channel(): import("..").Channel;
+    get config(): import("..").TextComposerConfig;
+    get enabled(): boolean;
+    set enabled(enabled: boolean);
+    get defaultValue(): string | undefined;
+    set defaultValue(defaultValue: string | undefined);
+    get maxLengthOnEdit(): number | undefined;
+    set maxLengthOnEdit(maxLengthOnEdit: number | undefined);
+    get maxLengthOnSend(): number | undefined;
+    set maxLengthOnSend(maxLengthOnSend: number | undefined);
+    get publishTypingEvents(): boolean;
+    set publishTypingEvents(publishTypingEvents: boolean);
+    get command(): CommandResponse | null | undefined;
+    get mentionedUsers(): UserResponse[];
+    get selection(): TextSelection;
+    get suggestions(): Suggestions<import("..").Suggestion> | undefined;
+    get text(): string;
+    get textIsEmpty(): boolean;
+    initState: ({ message }?: {
+        message?: DraftMessage | LocalMessage;
+    }) => void;
+    setMentionedUsers(users: UserResponse[]): void;
+    clearCommand(): void;
+    upsertMentionedUser: (user: UserResponse) => void;
+    getMentionedUser: (userId: string) => UserResponse | undefined;
+    removeMentionedUser: (userId: string) => void;
+    setCommand: (command: CommandResponse | null) => void;
+    setText: (text: string) => void;
+    setSelection: (selection: TextSelection) => void;
+    insertText: ({ text, selection, }: {
+        text: string;
+        selection?: TextSelection;
+    }) => Promise<void>;
+    wrapSelection: ({ head, selection, tail, }: {
+        head?: string;
+        selection?: TextSelection;
+        tail?: string;
+    }) => void;
+    setSuggestions: (suggestions: Suggestions) => void;
+    closeSuggestions: () => void;
+    handleChange: ({ text, selection, }: {
+        selection: TextSelection;
+        text: string;
+    }) => Promise<void>;
+    handleSelect: (target: TextComposerSuggestion<unknown>) => Promise<void>;
+}
