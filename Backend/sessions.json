@@ -1,5 +1,11 @@
 {
   "sessions": {
+    "58918368": {
+      "id": "58918368",
+      "createdAt": "2025-11-14T19:37:02.718Z",
+      "messages": [],
+      "users": []
+    },
     "64348465": {
       "id": "64348465",
       "createdAt": "2025-10-10T23:08:29.093Z",
@@ -46,6 +52,18 @@
     "64785497": {
       "id": "64785497",
       "createdAt": "2025-11-01T18:46:42.779Z",
+      "messages": [],
+      "users": []
+    },
+    "69673056": {
+      "id": "69673056",
+      "createdAt": "2025-11-14T21:04:34.255Z",
+      "messages": [],
+      "users": []
+    },
+    "88876989": {
+      "id": "88876989",
+      "createdAt": "2025-11-16T06:07:53.824Z",
       "messages": [],
       "users": []
     },
@@ -1941,6 +1959,1149 @@
           "isTyping": false
         }
       ]
+    },
+    "AA5513C6": {
+      "id": "AA5513C6",
+      "createdAt": "2025-11-06T05:28:21.209Z",
+      "messages": [],
+      "users": []
+    },
+    "0BE1E3CD": {
+      "id": "0BE1E3CD",
+      "createdAt": "2025-11-06T16:48:13.969Z",
+      "messages": [],
+      "users": []
+    },
+    "5CCEF8D8": {
+      "id": "5CCEF8D8",
+      "createdAt": "2025-11-06T16:57:58.258Z",
+      "messages": [],
+      "users": []
+    },
+    "904DE9E1": {
+      "id": "904DE9E1",
+      "createdAt": "2025-11-06T17:52:17.881Z",
+      "messages": [],
+      "users": []
+    },
+    "EDCF3E8B": {
+      "id": "EDCF3E8B",
+      "createdAt": "2025-11-06T17:57:42.191Z",
+      "messages": [],
+      "users": []
+    },
+    "0784E832": {
+      "id": "0784E832",
+      "createdAt": "2025-11-06T18:17:34.070Z",
+      "messages": [],
+      "users": []
+    },
+    "1BAE2802": {
+      "id": "1BAE2802",
+      "createdAt": "2025-11-06T18:28:15.625Z",
+      "messages": [],
+      "users": []
+    },
+    "16890ACD": {
+      "id": "16890ACD",
+      "createdAt": "2025-11-06T18:30:30.134Z",
+      "messages": [],
+      "users": [
+        {
+          "id": "r9_wpstleHiwr5d6AAAL",
+          "name": "Google User",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "EB3F1B97": {
+      "id": "EB3F1B97",
+      "createdAt": "2025-11-10T17:34:02.962Z",
+      "messages": [],
+      "users": [
+        {
+          "id": "-8RupQlYG0GKN8dZAAAC",
+          "name": "Google User",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "EF3973EC": {
+      "id": "EF3973EC",
+      "createdAt": "2025-11-14T17:21:49.295Z",
+      "messages": [],
+      "users": []
+    },
+    "077DF73E": {
+      "id": "077DF73E",
+      "createdAt": "2025-11-14T19:30:37.148Z",
+      "messages": [],
+      "users": []
+    },
+    "0987C9A2": {
+      "id": "0987C9A2",
+      "createdAt": "2025-11-14T19:57:18.226Z",
+      "messages": [],
+      "users": []
+    },
+    "06B11D52": {
+      "id": "06B11D52",
+      "createdAt": "2025-11-14T19:57:57.711Z",
+      "messages": [],
+      "users": []
+    },
+    "3E666934": {
+      "id": "3E666934",
+      "createdAt": "2025-11-14T20:12:18.843Z",
+      "messages": [
+        {
+          "id": "1763151145597",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "aGk=",
+          "timestamp": "2025-11-14T20:12:25.597Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "F2ABF72B": {
+      "id": "F2ABF72B",
+      "createdAt": "2025-11-14T21:04:28.501Z",
+      "messages": [],
+      "users": []
+    },
+    "A7D74DC6": {
+      "id": "A7D74DC6",
+      "createdAt": "2025-11-14T21:04:30.461Z",
+      "messages": [],
+      "users": []
+    },
+    "17B2C8C4": {
+      "id": "17B2C8C4",
+      "createdAt": "2025-11-14T21:04:31.504Z",
+      "messages": [],
+      "users": []
+    },
+    "9F03DF08": {
+      "id": "9F03DF08",
+      "createdAt": "2025-11-14T21:04:32.190Z",
+      "messages": [],
+      "users": []
+    },
+    "9C7984FE": {
+      "id": "9C7984FE",
+      "createdAt": "2025-11-14T21:04:32.887Z",
+      "messages": [],
+      "users": []
+    },
+    "5A73FFA1": {
+      "id": "5A73FFA1",
+      "createdAt": "2025-11-14T21:04:33.614Z",
+      "messages": [],
+      "users": []
+    },
+    "5616D010": {
+      "id": "5616D010",
+      "createdAt": "2025-11-14T21:04:34.981Z",
+      "messages": [],
+      "users": []
+    },
+    "DB574D17": {
+      "id": "DB574D17",
+      "createdAt": "2025-11-14T21:04:35.686Z",
+      "messages": [],
+      "users": []
+    },
+    "A0E97955": {
+      "id": "A0E97955",
+      "createdAt": "2025-11-14T21:13:43.434Z",
+      "messages": [],
+      "users": []
+    },
+    "CA520F30": {
+      "id": "CA520F30",
+      "createdAt": "2025-11-14T21:23:11.662Z",
+      "messages": [],
+      "users": []
+    },
+    "EAD731A6": {
+      "id": "EAD731A6",
+      "createdAt": "2025-11-14T21:25:01.788Z",
+      "messages": [],
+      "users": []
+    },
+    "704D7CFA": {
+      "id": "704D7CFA",
+      "createdAt": "2025-11-14T21:25:53.875Z",
+      "messages": [],
+      "users": []
+    },
+    "F5D1B880": {
+      "id": "F5D1B880",
+      "createdAt": "2025-11-14T21:49:30.280Z",
+      "messages": [],
+      "users": [
+        {
+          "id": "AjQHzVIyCXV9dBsLAAAF",
+          "name": "Google User",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "3798BA84": {
+      "id": "3798BA84",
+      "createdAt": "2025-11-15T18:03:47.825Z",
+      "messages": [],
+      "users": []
+    },
+    "5722C9F4": {
+      "id": "5722C9F4",
+      "createdAt": "2025-11-15T18:57:47.016Z",
+      "messages": [],
+      "users": []
+    },
+    "14979A4E": {
+      "id": "14979A4E",
+      "createdAt": "2025-11-15T18:59:25.145Z",
+      "messages": [
+        {
+          "id": "1763233169588",
+          "userId": "admin",
+          "userName": "admin",
+          "content": "aGk=",
+          "timestamp": "2025-11-15T18:59:29.588Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "E452F0FD": {
+      "id": "E452F0FD",
+      "createdAt": "2025-11-15T22:01:41.947Z",
+      "messages": [],
+      "users": []
+    },
+    "35879D92": {
+      "id": "35879D92",
+      "createdAt": "2025-11-15T22:02:38.051Z",
+      "messages": [
+        {
+          "id": "1763244165013",
+          "userId": "kartik Pant",
+          "userName": "kartik Pant",
+          "content": "aGk=",
+          "timestamp": "2025-11-15T22:02:45.013Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763244214686",
+          "userId": "Naman",
+          "userName": "Naman",
+          "content": "aGk=",
+          "timestamp": "2025-11-15T22:03:34.686Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763244309807",
+          "userId": "Naman",
+          "userName": "Naman",
+          "content": "aGk=",
+          "timestamp": "2025-11-15T22:05:09.807Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763244314362",
+          "userId": "nnn",
+          "userName": "nnn",
+          "content": "aWhoaWhpaA==",
+          "timestamp": "2025-11-15T22:05:14.362Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763244454261",
+          "userId": "Naman",
+          "userName": "Naman",
+          "content": "aGk=",
+          "timestamp": "2025-11-15T22:07:34.261Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": [
+        {
+          "id": "99JP7nWA2NwSmobXAAA-",
+          "name": "nnn",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "41547D80": {
+      "id": "41547D80",
+      "createdAt": "2025-11-15T22:19:33.353Z",
+      "messages": [
+        {
+          "id": "1763245512612",
+          "userId": "kartik",
+          "userName": "kartik",
+          "content": "aGk=",
+          "timestamp": "2025-11-15T22:25:12.612Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763245529058",
+          "userId": "kartik",
+          "userName": "kartik",
+          "content": "Z2RnZGdkZ2Q=",
+          "timestamp": "2025-11-15T22:25:29.058Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763245534666",
+          "userId": "Naman Pant",
+          "userName": "Naman Pant",
+          "content": "Zndmdw==",
+          "timestamp": "2025-11-15T22:25:34.666Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763245608382",
+          "userId": "kartik",
+          "userName": "kartik",
+          "content": "bm5ubg==",
+          "timestamp": "2025-11-15T22:26:48.382Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763245613923",
+          "userId": "Naman Pant",
+          "userName": "Naman Pant",
+          "content": "aGho",
+          "timestamp": "2025-11-15T22:26:53.923Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": [
+        {
+          "id": "_ruXOggID8eDuDQSAAAE",
+          "name": "Naman Pant",
+          "status": "online",
+          "isTyping": false
+        },
+        {
+          "id": "ZMB0HlbanPM13MGmAAAH",
+          "name": "kartik",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "F43A146B": {
+      "id": "F43A146B",
+      "createdAt": "2025-11-15T22:32:43.465Z",
+      "messages": [],
+      "users": []
+    },
+    "C772741A": {
+      "id": "C772741A",
+      "createdAt": "2025-11-15T22:51:28.041Z",
+      "messages": [],
+      "users": []
+    },
+    "52F7BDBE": {
+      "id": "52F7BDBE",
+      "createdAt": "2025-11-16T03:08:44.897Z",
+      "messages": [
+        {
+          "id": "1763262531883",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T03:08:51.883Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763262556177",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "aGkg",
+          "timestamp": "2025-11-16T03:09:16.177Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763262605261",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T03:10:05.261Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763262609440",
+          "userId": "karrik",
+          "userName": "karrik",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T03:10:09.440Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "9A2F2A8E": {
+      "id": "9A2F2A8E",
+      "createdAt": "2025-11-16T03:24:20.317Z",
+      "messages": [],
+      "users": []
+    },
+    "7620B427": {
+      "id": "7620B427",
+      "createdAt": "2025-11-16T03:51:29.173Z",
+      "messages": [
+        {
+          "id": "1763265144838",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T03:52:24.838Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763265149200",
+          "userId": "nasmans",
+          "userName": "nasmans",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T03:52:29.200Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763265155761",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T03:52:35.761Z",
+          "encrypted": true,
+          "status": "sent",
+          "replyTo": "1763265144838",
+          "isPrivate": false
+        },
+        {
+          "id": "1763265161654",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "QG5hc21hbnMgaGk=",
+          "timestamp": "2025-11-16T03:52:41.654Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "DA55DBBC": {
+      "id": "DA55DBBC",
+      "createdAt": "2025-11-16T04:25:26.517Z",
+      "messages": [],
+      "users": []
+    },
+    "9D588B10": {
+      "id": "9D588B10",
+      "createdAt": "2025-11-16T04:27:17.028Z",
+      "messages": [],
+      "users": []
+    },
+    "5EA17C5C": {
+      "id": "5EA17C5C",
+      "createdAt": "2025-11-16T05:04:57.639Z",
+      "messages": [],
+      "users": []
+    },
+    "3B755FDA": {
+      "id": "3B755FDA",
+      "createdAt": "2025-11-16T05:53:19.895Z",
+      "messages": [],
+      "users": []
+    },
+    "EE4F6F5A": {
+      "id": "EE4F6F5A",
+      "createdAt": "2025-11-16T05:57:41.552Z",
+      "messages": [],
+      "users": [
+        {
+          "id": "oR_v0o7S1fXUkFoWAAAN",
+          "name": "Google User",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "21CB8943": {
+      "id": "21CB8943",
+      "createdAt": "2025-11-16T06:30:59.690Z",
+      "messages": [],
+      "users": []
+    },
+    "A7CC9EAC": {
+      "id": "A7CC9EAC",
+      "createdAt": "2025-11-16T06:31:41.121Z",
+      "messages": [],
+      "users": []
+    },
+    "F9DAC8DD": {
+      "id": "F9DAC8DD",
+      "createdAt": "2025-11-16T06:32:20.551Z",
+      "messages": [],
+      "users": []
+    },
+    "B60399FE": {
+      "id": "B60399FE",
+      "createdAt": "2025-11-16T06:33:27.548Z",
+      "messages": [],
+      "users": [
+        {
+          "id": "PNrp6XkX79SAHR-GAABv",
+          "name": "Google User",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "7296B35A": {
+      "id": "7296B35A",
+      "createdAt": "2025-11-16T06:35:12.517Z",
+      "messages": [
+        {
+          "id": "1763274988774",
+          "userId": "smMSN",
+          "userName": "smMSN",
+          "content": "SEk=",
+          "timestamp": "2025-11-16T06:36:28.774Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763274993735",
+          "userId": "GitHub User",
+          "userName": "GitHub User",
+          "content": "S0pTRks=",
+          "timestamp": "2025-11-16T06:36:33.735Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763278194672",
+          "userId": "GitHub User",
+          "userName": "GitHub User",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T07:29:54.672Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763278202725",
+          "userId": "GitHub User",
+          "userName": "GitHub User",
+          "content": "aGtoa2hrOw==",
+          "timestamp": "2025-11-16T07:30:02.725Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763278530929",
+          "userId": "GitHub User",
+          "userName": "GitHub User",
+          "content": "SElISUg=",
+          "timestamp": "2025-11-16T07:35:30.929Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763278686164",
+          "userId": "smMSN",
+          "userName": "smMSN",
+          "content": "aG9qamtobA==",
+          "timestamp": "2025-11-16T07:38:06.164Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763278797589",
+          "userId": "smMSN",
+          "userName": "smMSN",
+          "content": "aGhpaWhoZWpoZQ==",
+          "timestamp": "2025-11-16T07:39:57.589Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763278802071",
+          "userId": "ofashsfh",
+          "userName": "ofashsfh",
+          "content": "aGVocWplaGtxZWhrcWhqZQ==",
+          "timestamp": "2025-11-16T07:40:02.071Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763278815563",
+          "userId": "smMSN",
+          "userName": "smMSN",
+          "content": "QG9mYXNoc2ZoaGk=",
+          "timestamp": "2025-11-16T07:40:15.563Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763278825620",
+          "userId": "smMSN",
+          "userName": "smMSN",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T07:40:25.620Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": true,
+          "targetUserId": "Vq0KukuJRbJAVzQkAAF-",
+          "targetUserName": "smMSN"
+        },
+        {
+          "id": "1763278830322",
+          "userId": "smMSN",
+          "userName": "smMSN",
+          "content": "aGpla2hla3Foa2VrcQ==",
+          "timestamp": "2025-11-16T07:40:30.322Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": true,
+          "targetUserId": "Vq0KukuJRbJAVzQkAAF-",
+          "targetUserName": "smMSN"
+        },
+        {
+          "id": "1763278840354",
+          "userId": "smMSN",
+          "userName": "smMSN",
+          "content": "a2h3a2pocWt3aGpx",
+          "timestamp": "2025-11-16T07:40:40.355Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": true,
+          "targetUserId": "5KBGrOlTEtAzOJrJAAGB",
+          "targetUserName": "ofashsfh"
+        },
+        {
+          "id": "1763279319001",
+          "userId": "smMSN",
+          "userName": "smMSN",
+          "content": "aHU=",
+          "timestamp": "2025-11-16T07:48:39.001Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763279326726",
+          "userId": "ofashsfh",
+          "userName": "ofashsfh",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T07:48:46.726Z",
+          "encrypted": true,
+          "status": "sent",
+          "replyTo": "1763279319001",
+          "isPrivate": false
+        },
+        {
+          "id": "1763279332031",
+          "userId": "smMSN",
+          "userName": "smMSN",
+          "content": "aHU=",
+          "timestamp": "2025-11-16T07:48:52.031Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763279452436",
+          "userId": "ofashsfh",
+          "userName": "ofashsfh",
+          "content": "aHU=",
+          "timestamp": "2025-11-16T07:50:52.436Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763279469907",
+          "userId": "smMSN",
+          "userName": "smMSN",
+          "content": "aHU=",
+          "timestamp": "2025-11-16T07:51:09.907Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763279559007",
+          "userId": "smMSN",
+          "userName": "smMSN",
+          "content": "cXVpcWVocWhlcWhlaXE=",
+          "timestamp": "2025-11-16T07:52:39.007Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763279563786",
+          "userId": "ofashsfh",
+          "userName": "ofashsfh",
+          "content": "aGVranFoZWtxaGVrcWhla3Foa2VxaA==",
+          "timestamp": "2025-11-16T07:52:43.786Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763279569282",
+          "userId": "smMSN",
+          "userName": "smMSN",
+          "content": "ZWhxZWhrcWpl",
+          "timestamp": "2025-11-16T07:52:49.282Z",
+          "encrypted": true,
+          "status": "sent",
+          "replyTo": "1763279559007",
+          "isPrivate": false
+        },
+        {
+          "id": "1763279588064",
+          "userId": "smMSN",
+          "userName": "smMSN",
+          "content": "aGhqaGo=",
+          "timestamp": "2025-11-16T07:53:08.064Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": [
+        {
+          "id": "GE1DF_51CgqrjTuQAAHJ",
+          "name": "ofashsfh",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "0A0079A5": {
+      "id": "0A0079A5",
+      "createdAt": "2025-11-16T06:56:20.544Z",
+      "messages": [
+        {
+          "id": "1763278278716",
+          "userId": "jahdjahd",
+          "userName": "jahdjahd",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T07:31:18.716Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763278294449",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "aGloZGFoZGphaGtkaGFramg=",
+          "timestamp": "2025-11-16T07:31:34.449Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763278298422",
+          "userId": "jahdjahd",
+          "userName": "jahdjahd",
+          "content": "a2hmaEhES0poZGFIREpramRo",
+          "timestamp": "2025-11-16T07:31:38.422Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763278642338",
+          "userId": "jahdjahd",
+          "userName": "jahdjahd",
+          "content": "aWhpaGlo",
+          "timestamp": "2025-11-16T07:37:22.338Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": [
+        {
+          "id": "586-9y8_Jen9e0HKAAHM",
+          "name": "Google User",
+          "status": "online",
+          "isTyping": false
+        }
+      ]
+    },
+    "7D4CBA3F": {
+      "id": "7D4CBA3F",
+      "createdAt": "2025-11-16T07:54:58.530Z",
+      "messages": [
+        {
+          "id": "1763279719299",
+          "userId": "GitHub User",
+          "userName": "GitHub User",
+          "content": "cWprcWprd2hqcWt3cWg=",
+          "timestamp": "2025-11-16T07:55:19.299Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763279724333",
+          "userId": "kartik",
+          "userName": "kartik",
+          "content": "d2pxd2pxaGp3aHFqd2g=",
+          "timestamp": "2025-11-16T07:55:24.333Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "D538726A": {
+      "id": "D538726A",
+      "createdAt": "2025-11-16T08:48:28.928Z",
+      "messages": [
+        {
+          "id": "1763282931065",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T08:48:51.065Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763282966107",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "a2poa2poa2po",
+          "timestamp": "2025-11-16T08:49:26.107Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763282996653",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "bW5ibW5ibm1ibQ==",
+          "timestamp": "2025-11-16T08:49:56.653Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "34F7DAE5": {
+      "id": "34F7DAE5",
+      "createdAt": "2025-11-16T08:50:15.151Z",
+      "messages": [
+        {
+          "id": "1763283025529",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "amg=",
+          "timestamp": "2025-11-16T08:50:25.529Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763283143558",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "Ym5ibmJuYg==",
+          "timestamp": "2025-11-16T08:52:23.558Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763283147334",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "bWtta20=",
+          "timestamp": "2025-11-16T08:52:27.334Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763283259836",
+          "userId": "bvnbvnb",
+          "userName": "bvnbvnb",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T08:54:19.836Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763283306372",
+          "userId": "bvnbvnb",
+          "userName": "bvnbvnb",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T08:55:06.372Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763283428157",
+          "userId": "bvnbvnb",
+          "userName": "bvnbvnb",
+          "content": "a2ho",
+          "timestamp": "2025-11-16T08:57:08.157Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763283494252",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T08:58:14.252Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763283500325",
+          "userId": "bvnbvnb",
+          "userName": "bvnbvnb",
+          "content": "aGpqa2hramhrag==",
+          "timestamp": "2025-11-16T08:58:20.325Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "286A6DB7": {
+      "id": "286A6DB7",
+      "createdAt": "2025-11-16T09:10:44.708Z",
+      "messages": [
+        {
+          "id": "1763284251026",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T09:10:51.026Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "A084C8B0": {
+      "id": "A084C8B0",
+      "createdAt": "2025-11-16T09:45:36.393Z",
+      "messages": [
+        {
+          "id": "1763286345285",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "aGk=",
+          "timestamp": "2025-11-16T09:45:45.285Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "9C3E5A0B": {
+      "id": "9C3E5A0B",
+      "createdAt": "2025-11-16T09:53:02.888Z",
+      "messages": [
+        {
+          "id": "1763286805591",
+          "userId": "namanpant.np",
+          "userName": "namanpant.np",
+          "content": "anlqZjRy",
+          "timestamp": "2025-11-16T09:53:25.591Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763286820934",
+          "userId": "namanpant.np",
+          "userName": "namanpant.np",
+          "content": "ZmFqc2RhZ3NkamFzZw==",
+          "timestamp": "2025-11-16T09:53:40.934Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763286822197",
+          "userId": "namanpant.np",
+          "userName": "namanpant.np",
+          "content": "amdhamhkZ2Fqc2dkYWo=",
+          "timestamp": "2025-11-16T09:53:42.197Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763286823370",
+          "userId": "namanpant.np",
+          "userName": "namanpant.np",
+          "content": "YXNkdmFzZGZnc2Zk",
+          "timestamp": "2025-11-16T09:53:43.370Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763286825105",
+          "userId": "namanpant.np",
+          "userName": "namanpant.np",
+          "content": "d2Rkd3FkZ2ZzamRoYXNoZ2FzZg==",
+          "timestamp": "2025-11-16T09:53:45.105Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763286826598",
+          "userId": "namanpant.np",
+          "userName": "namanpant.np",
+          "content": "Z2N2c25jYXNjdm5hc3ZjYQ==",
+          "timestamp": "2025-11-16T09:53:46.598Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "041271F4": {
+      "id": "041271F4",
+      "createdAt": "2025-11-16T09:58:01.838Z",
+      "messages": [
+        {
+          "id": "1763287088381",
+          "userId": "namanpant.np",
+          "userName": "namanpant.np",
+          "content": "aGhoc2ho",
+          "timestamp": "2025-11-16T09:58:08.381Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "B4CED31B": {
+      "id": "B4CED31B",
+      "createdAt": "2025-11-16T10:07:56.245Z",
+      "messages": [
+        {
+          "id": "1763287680962",
+          "userId": "Google User",
+          "userName": "Google User",
+          "content": "LE5IV0dK",
+          "timestamp": "2025-11-16T10:08:00.962Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
+    },
+    "7A828C38": {
+      "id": "7A828C38",
+      "createdAt": "2025-11-16T13:06:49.247Z",
+      "messages": [
+        {
+          "id": "1763298562130",
+          "userId": "namanpant.np",
+          "userName": "namanpant.np",
+          "content": "cmZydGZmcmZm",
+          "timestamp": "2025-11-16T13:09:22.130Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        },
+        {
+          "id": "1763298567529",
+          "userId": "drct",
+          "userName": "drct",
+          "content": "dHR0ZnRmeWZ5Zg==",
+          "timestamp": "2025-11-16T13:09:27.529Z",
+          "encrypted": true,
+          "status": "sent",
+          "isPrivate": false
+        }
+      ],
+      "users": []
     }
   },
   "userSessions": {
@@ -2092,6 +3253,37 @@
     "0D92E7D3": [
       "AXON",
       "kartik1"
+    ],
+    "35879D92": [
+      "Naman",
+      "nnn"
+    ],
+    "41547D80": [
+      "kartik"
+    ],
+    "52F7BDBE": [
+      "karrik"
+    ],
+    "7620B427": [
+      "nasmans",
+      "mbmb",
+      "kkkj"
+    ],
+    "7296B35A": [
+      "smMSN",
+      "ofashsfh"
+    ],
+    "0A0079A5": [
+      "jahdjahd"
+    ],
+    "7D4CBA3F": [
+      "kartik"
+    ],
+    "34F7DAE5": [
+      "bvnbvnb"
+    ],
+    "7A828C38": [
+      "drct"
     ]
   }
 }

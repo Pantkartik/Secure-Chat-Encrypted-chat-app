@@ -15,23 +15,44 @@ const io = new Server(server, {
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
   },
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'],
+  path: '/socket.io/',
+  serveClient: true,
+  pingTimeout: 60000,
+  pingInterval: 25000
+});
+
+// CORS debugging middleware (must come BEFORE cors middleware)
+app.use((req, res, next) => {
+  console.log(`[CORS DEBUG] ${req.method} ${req.url}`);
+  console.log(`[CORS DEBUG] Origin: ${req.headers.origin}`);
+  
+  if (req.method === 'OPTIONS') {
+    console.log('[CORS DEBUG] Handling OPTIONS preflight request');
+  }
+  
+  next();
 });
 
 /** Enable CORS for all routes */
-// Updated CORS to allow local development and production
+// TEMPORARILY VERY PERMISSIVE FOR DEBUGGING - Allow all origins
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001', 
-    'http://localhost:3002',
-    'http://localhost:3003',
-    'https://your-frontend-domain.com',
-    'https://cypherchat-backend.loca.lt'
-  ],
+  origin: function(origin, callback) {
+    console.log(`[CORS DEBUG] Origin check: ${origin}`);
+    
+    // For debugging, allow ALL origins temporarily
+    if (origin) {
+      console.log(`[CORS DEBUG] Origin ${origin} ALLOWED (debug mode)`);
+      return callback(null, true);
+    }
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    console.log('[CORS DEBUG] No origin, allowing request');
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-requested-with'],
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
@@ -103,6 +124,70 @@ app.post('/api/create-session', (req, res) => {
 // Simple health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
+// API health check endpoint (for frontend compatibility)
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
+// Real-time statistics endpoint
+app.get('/api/stats', (req, res) => {
+  try {
+    // Calculate real-time statistics
+    let totalUsers = 0;
+    let totalMessages = 0;
+    let activeSessions = 0;
+    
+    // Count users across all sessions
+    Object.keys(sessions).forEach(sessionId => {
+      if (sessions[sessionId].users) {
+        totalUsers += sessions[sessionId].users.length;
+      }
+      if (sessions[sessionId].messages) {
+        totalMessages += sessions[sessionId].messages.length;
+      }
+      activeSessions++;
+    });
+    
+    // Calculate uptime
+    const uptime = process.uptime();
+    const hours = Math.floor(uptime / 3600);
+    const minutes = Math.floor((uptime % 3600) / 60);
+    const seconds = Math.floor(uptime % 60);
+    
+    const stats = {
+      activeUsers: totalUsers,
+      totalMessages: totalMessages,
+      messagesPerSecond: 0, // This will be calculated client-side
+      activeSessions: activeSessions,
+      averageResponseTime: Math.floor(Math.random() * 50) + 20, // Simulated for demo
+      uptime: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+    };
+    
+    res.json(stats);
+  } catch (error) {
+    console.error('[DEBUG] Error fetching stats:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch statistics',
+      activeUsers: 0,
+      totalMessages: 0,
+      messagesPerSecond: 0,
+      activeSessions: 0,
+      averageResponseTime: 0,
+      uptime: '00:00:00'
+    });
+  }
+});
+
+// Socket.IO test endpoint
+app.get('/socket-test', (req, res) => {
+  res.json({ 
+    status: 'Socket.IO server configured', 
+    path: '/socket.io/',
+    transports: ['websocket', 'polling'],
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Join a session by token
@@ -431,6 +516,45 @@ io.on('connection', (socket) => {
     console.log('[DEBUG] Private typing stop from', userId, 'to', targetUserId);
     const roomName = [userId, targetUserId].sort().join('-');
     socket.to(roomName).emit('userTyping', { username: userId, isTyping: false });
+  });
+
+  // Simple Peer WebRTC events
+  socket.on('simple-peer-signal', ({ to, from, signal, roomId }) => {
+    console.log('[DEBUG] Simple Peer signal from', from, 'to', to, 'type:', signal.type);
+    if (to && from !== socket.id) {
+      socket.to(to).emit('simple-peer-signal', {
+        from: from,
+        signal: signal,
+        roomId: roomId
+      });
+    }
+  });
+
+  socket.on('simple-peer-call-request', ({ to, from, callerName, roomId }) => {
+    console.log('[DEBUG] Simple Peer call request from', callerName, 'to', to);
+    if (to && from !== socket.id) {
+      socket.to(to).emit('simple-peer-call-request', {
+        from: from,
+        callerName: callerName,
+        roomId: roomId
+      });
+    }
+  });
+
+  socket.on('simple-peer-call-end', ({ roomId, from }) => {
+    console.log('[DEBUG] Simple Peer call ended from', from);
+    if (roomId) {
+      socket.to(roomId).emit('simple-peer-call-end', { from: from });
+    }
+  });
+
+  socket.on('join-simple-peer-room', ({ roomId, userId }) => {
+    console.log('[DEBUG] Simple Peer room join:', { roomId, userId });
+    if (roomId && userId) {
+      socket.join(roomId);
+      // Notify others in the room
+      socket.to(roomId).emit('user-joined', { userId: userId });
+    }
   });
   
   socket.on('disconnect', () => {
