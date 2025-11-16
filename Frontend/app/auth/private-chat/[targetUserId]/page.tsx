@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { UserMenu } from "@/components/user-menu";
-import JitsiVideoCall from "@/components/jitsi-video-call";
+import SimplePeerVideoCallImproved from "@/components/simple-peer-video-call-improved";
 import { 
   Shield, Phone, Video, Search, Users, MoreVertical, Reply, X, AtSign, 
   Smile, Send, Paperclip, Settings, UserPlus, MessageCircle, Lock 
@@ -632,14 +632,12 @@ export default function PrivateChatPage() {
       </div>
 
       {/* Video Call Component */}
-      <JitsiVideoCall
-        isOpen={isVideoCallOpen}
-        onClose={endVideoCall}
-        sessionId={`private-${[username, targetUserId].sort().join('-')}`}
-        username={username}
+      <SimplePeerVideoCallImproved
+        roomId={`private-${[username, targetUserId].sort().join('-')}`}
         targetUserId={targetUserId}
         isGroupCall={false}
         isAudioOnly={isAudioCall}
+        onCallEnd={endVideoCall}
       />
     </div>
   );

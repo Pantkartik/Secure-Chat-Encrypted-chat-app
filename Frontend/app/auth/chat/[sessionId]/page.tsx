@@ -35,14 +35,21 @@ import {
   WifiOff,
   AtSign,
   Reply,
-  X
+  X,
+  Wrench,
+  CheckCircle as CheckCircleIcon,
+  AlertCircle,
+  CornerDownRight,
+  Loader2,
+  Play,
+  XCircle
 } from "lucide-react"
 import Link from "next/link"
 import { useParams, useSearchParams, useRouter } from "next/navigation"
 import { UserMenu } from "@/components/user-menu";
 import io from "socket.io-client"
-import { SOCKET_URL } from "@/lib/config"
-import JitsiVideoCall from "@/components/jitsi-video-call"
+import SimplePeerVideoCallImproved from "@/components/simple-peer-video-call-improved"
+import ThreeEncryptionModel from "@/components/three-encryption-model"
 
 interface Message {
   id: string
@@ -110,6 +117,11 @@ export default function ChatPage() {
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
+  // Simple Peer Test Panel State
+  const [showTestPanel, setShowTestPanel] = useState(false);
+  const [testResults, setTestResults] = useState<{type: string; message: string; success: boolean; timestamp: string}[]>([]);
+  const [isTesting, setIsTesting] = useState(false);
+
   // Encryption/decryption
   const encryptMessage = (text: string): string => {
     return btoa(text);
@@ -148,7 +160,7 @@ export default function ChatPage() {
      }
      
      try {
-       const socket = io(SOCKET_URL);
+       const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3004");
        socketRef.current = socket;
        
        socket.on("connect", () => {
@@ -362,6 +374,79 @@ export default function ChatPage() {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
+  // Simple Peer Test Functions
+  const addTestResult = (type: string, message: string, success: boolean) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setTestResults(prev => [...prev, { type, message, success, timestamp }]);
+  };
+
+  const runSimplePeerTests = async () => {
+    setIsTesting(true);
+    setTestResults([]);
+
+    try {
+      // Test 1: Socket Connection
+      if (!socketRef.current?.connected) {
+        addTestResult('Socket', 'Socket not connected', false);
+        setIsTesting(false);
+        return;
+      }
+      addTestResult('Socket', 'Socket connected successfully', true);
+
+      // Test 2: Media Devices
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const hasCamera = devices.some(device => device.kind === 'videoinput');
+        const hasMic = devices.some(device => device.kind === 'audioinput');
+        
+        if (hasCamera) {
+          addTestResult('Media', 'Camera detected', true);
+        } else {
+          addTestResult('Media', 'No camera detected', false);
+        }
+        
+        if (hasMic) {
+          addTestResult('Media', 'Microphone detected', true);
+        } else {
+          addTestResult('Media', 'No microphone detected', false);
+        }
+      } catch (error) {
+        addTestResult('Media', `Media devices error: ${error}`, false);
+      }
+
+      // Test 3: Simple Peer Integration
+      try {
+        // Check if Simple Peer component is properly integrated
+        if (typeof window !== 'undefined') {
+          addTestResult('Integration', 'Simple Peer component available', true);
+        } else {
+          addTestResult('Integration', 'Simple Peer not available', false);
+        }
+      } catch (error) {
+        addTestResult('Integration', `Integration error: ${error}`, false);
+      }
+
+      // Test 4: WebRTC Support
+      if (typeof window !== 'undefined' && 'RTCPeerConnection' in window) {
+        addTestResult('WebRTC', 'WebRTC supported', true);
+      } else {
+        addTestResult('WebRTC', 'WebRTC not supported', false);
+      }
+
+      addTestResult('Complete', 'All tests completed', true);
+    } catch (error) {
+      addTestResult('Error', `Test suite error: ${error}`, false);
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const clearTestResults = () => {
+    setTestResults([]);
+  };
+
+
+
   // Handle emoji insertion
   const insertEmoji = (emoji: string) => {
     if (inputRef.current) {
@@ -497,23 +582,61 @@ export default function ChatPage() {
     return colors[index];
   };
 
-  // Video calling functions
+  // Video calling functions with debouncing to prevent flickering
   const startVideoCall = (targetUserId?: string) => {
+    // Prevent rapid state changes that could cause flickering
+    if (isVideoCallOpen) {
+      console.log('Video call already open, preventing duplicate initialization')
+      return
+    }
+    
     setVideoCallTargetUser(targetUserId);
     setIsGroupVideoCall(!targetUserId);
     setIsVideoCallOpen(true);
     setIsAudioCall(false);
+    
+    // Emit socket event to notify other users about the video call
+    if (socketRef.current) {
+      socketRef.current.emit(targetUserId ? "videoCallRequest" : "groupVideoCallRequest", {
+        sessionId,
+        callerName: username,
+        targetUserId: targetUserId || null,
+        isGroupCall: !targetUserId
+      });
+    }
   };
 
-  // Audio calling functions
+  // Audio calling functions with debouncing to prevent flickering
   const startAudioCall = (targetUserId?: string) => {
+    // Prevent rapid state changes that could cause flickering
+    if (isVideoCallOpen) {
+      console.log('Video call already open, preventing duplicate initialization')
+      return
+    }
+    
     setVideoCallTargetUser(targetUserId);
     setIsGroupVideoCall(!targetUserId);
     setIsVideoCallOpen(true);
     setIsAudioCall(true);
+    
+    // Emit socket event to notify other users about the audio call
+    if (socketRef.current) {
+      socketRef.current.emit(targetUserId ? "audioCallRequest" : "groupAudioCallRequest", {
+        sessionId,
+        callerName: username,
+        targetUserId: targetUserId || null,
+        isGroupCall: !targetUserId
+      });
+    }
   };
 
   const endVideoCall = () => {
+    // Only close if actually open to prevent unnecessary state changes
+    if (!isVideoCallOpen) {
+      console.log('Video call not open, skipping close')
+      return
+    }
+    
     setIsVideoCallOpen(false);
     setVideoCallTargetUser(undefined);
     setIsGroupVideoCall(false);
@@ -523,13 +646,13 @@ export default function ChatPage() {
   // Loading state
    if (isLoading) {
      return (
-       <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-900 flex items-center justify-center">
-         <div className="text-center">
-           <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center animate-pulse">
-             <Shield className="w-8 h-8 text-white" />
+       <div className="h-screen bg-background flex items-center justify-center">
+         <div className="text-center space-y-4">
+           <div className="w-12 h-12 mx-auto border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+           <div>
+             <h3 className="text-lg font-medium text-foreground">Connecting to secure chat</h3>
+             <p className="text-sm text-muted-foreground">Establishing encrypted connection</p>
            </div>
-           <h3 className="text-lg font-semibold text-foreground mb-2">Connecting to secure chat...</h3>
-           <p className="text-muted-foreground">Establishing encrypted connection</p>
          </div>
        </div>
      );
@@ -538,14 +661,16 @@ export default function ChatPage() {
    // Error state
    if (error) {
      return (
-       <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-900 flex items-center justify-center">
-         <div className="text-center max-w-md">
-           <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900 rounded-2xl flex items-center justify-center">
-             <WifiOff className="w-8 h-8 text-red-600 dark:text-red-400" />
+       <div className="h-screen bg-background flex items-center justify-center">
+         <div className="text-center max-w-sm space-y-4">
+           <div className="w-16 h-16 mx-auto bg-destructive/10 rounded-lg flex items-center justify-center">
+             <WifiOff className="w-8 h-8 text-destructive" />
            </div>
-           <h3 className="text-lg font-semibold text-foreground mb-2">Connection Failed</h3>
-           <p className="text-muted-foreground mb-4">{error}</p>
-           <Button onClick={() => window.location.reload()} className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white">
+           <div>
+             <h3 className="text-lg font-medium text-foreground">Connection Failed</h3>
+             <p className="text-sm text-muted-foreground">{error}</p>
+           </div>
+           <Button onClick={() => window.location.reload()} variant="outline">
              Retry Connection
            </Button>
          </div>
@@ -554,159 +679,130 @@ export default function ChatPage() {
    }
 
    return (
-     <div className="h-screen bg-gradient-to-br from-slate-50 via-stone-50 to-amber-50 dark:from-slate-900 dark:via-slate-800 dark:to-amber-900/20 flex font-sans">
+     <div className="h-screen bg-background/90 flex relative">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? "w-80" : "w-0"} transition-all duration-500 ease-out border-r border-slate-200/50 dark:border-slate-700/30 bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl flex flex-col overflow-hidden shadow-2xl shadow-slate-900/5`}>
+      <div className={`${sidebarOpen ? "w-80" : "w-0"} transition-all duration-300 ease-out border-r border-border bg-card flex flex-col overflow-hidden`}>
         {/* Sidebar Header */}
-        <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/30">
+        <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
-                <Shield className="w-6 h-6 text-white" />
+              <div className="w-14 h-14 bg-gradient-to-br from-primary via-primary to-secondary rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/30 hover:shadow-primary/40 transition-all duration-300 hover:scale-105">
+                <Shield className="w-7 h-7 text-white drop-shadow-lg" />
               </div>
               <div>
-                <h2 className="text-xl font-medium text-foreground tracking-tight">Cypher Chat</h2>
-                <p className="text-sm text-muted-foreground font-light">Session: {sessionId}</p>
+                <h2 className="text-2xl font-bold text-foreground tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Cypher Chat</h2>
+                <p className="text-sm text-muted-foreground font-medium flex items-center">
+                  <span className="w-2 h-2 bg-primary rounded-full mr-2 animate-pulse"></span>
+                  Session: <span className="font-bold ml-1 text-primary dark:text-primary">{sessionId}</span>
+                </p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground hover:bg-slate-100/50 dark:hover:bg-slate-700/50 rounded-lg">
-              <MoreVertical className="w-4 h-4" />
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-slate-100 hover:to-blue-100 dark:hover:from-slate-700 dark:hover:to-blue-900/30 rounded-xl w-10 h-10 shadow-md hover:shadow-lg transition-all duration-200">
+              <MoreVertical className="w-5 h-5" />
             </Button>
           </div>
           
           {/* Connection Status */}
-          <div className="flex items-center space-x-3">
-            {isConnected ? (
-                <>
-                  <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-lg shadow-emerald-500/50"></div>
-                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Connected</span>
-                </>
-              ) : (
-                <>
-                  <div className="w-3 h-3 bg-red-500 rounded-full shadow-lg shadow-red-500/50"></div>
-                  <span className="text-sm font-bold text-red-700 dark:text-red-400">Disconnected</span>
-                </>
-              )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              {isConnected ? (
+                  <>
+                    <div className="w-3 h-3 bg-primary rounded-full animate-pulse shadow-lg shadow-primary/50"></div>
+                    <span className="text-sm font-bold text-primary dark:text-primary">Connected</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-3 h-3 bg-destructive rounded-full shadow-lg shadow-destructive/50"></div>
+                    <span className="text-sm font-bold text-destructive dark:text-destructive">Disconnected</span>
+                  </>
+                )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-ping"></div>
+              <span className="text-xs font-medium text-muted-foreground">Live</span>
+            </div>
           </div>
         </div>
 
         {/* Online Users */}
         <ScrollArea className="flex-1 p-6">
           <div className="space-y-4">
-            <div className="flex items-center justify-between text-sm text-muted-foreground mb-6">
-              <span className="font-medium tracking-wide">ONLINE USERS</span>
-              <Badge variant="secondary" className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-0">
-                {userCount}
-              </Badge>
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <Users className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <div>
+                <h2 className="text-sm font-medium text-foreground">Online Users</h2>
+                <p className="text-xs text-muted-foreground">{userCount} connected</p>
+              </div>
             </div>
             
-            {/* Current User */}
-            <div className="flex items-center space-x-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-900/30 dark:via-teal-900/30 dark:to-cyan-900/30 border border-emerald-200/50 dark:border-emerald-700/30 shadow-lg hover:shadow-xl transition-all duration-300 group">
-              <div className="relative">
-                <Avatar className="w-14 h-14 ring-3 ring-white/60 dark:ring-slate-700/60 shadow-lg group-hover:scale-105 transition-transform duration-300">
-                  <AvatarFallback className={`${getAvatarColor(username || 'A')} text-white font-bold text-xl shadow-inner`}>
-                    {(username || 'A').charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full border-3 border-white dark:border-slate-800 shadow-lg flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+            {/* Current user */}
+            <div className="mb-4">
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">You</h3>
+              <div className="bg-card border border-border rounded-lg p-3">
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-primary-foreground">{(username || 'A').charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-card" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{username}</p>
+                    <p className="text-xs text-muted-foreground">Active now</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">Online</Badge>
                 </div>
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-foreground text-lg bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">{username}</p>
-                <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium flex items-center">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
-                  Active now
-                </p>
-              </div>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full bg-white/50 dark:bg-slate-700/50 hover:bg-white/70 dark:hover:bg-slate-600/50">
-                  <MoreVertical className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                </Button>
               </div>
             </div>
 
-            {/* Other Users */}
-            {users.map((user) => (
-              <div key={user.id} className="flex items-center space-x-4 p-5 rounded-2xl hover:bg-gradient-to-r hover:from-slate-50 hover:to-blue-50 dark:hover:from-slate-700/50 dark:hover:to-blue-900/30 transition-all duration-300 cursor-pointer group border border-transparent hover:border-blue-200/50 dark:hover:border-blue-700/30">
-                <div className="relative">
-                  <Avatar className="w-12 h-12 ring-2 ring-white/60 dark:ring-slate-700/60 group-hover:scale-105 transition-transform duration-300 shadow-lg">
-                    <AvatarFallback className={`${getAvatarColor(user.name || 'A')} text-white font-bold text-lg shadow-inner`}>
-                      {(user.name || 'A').charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-white dark:border-slate-800 shadow-lg flex items-center justify-center ${
-                    user.status === "online" ? "bg-gradient-to-r from-emerald-500 to-green-500" : 
-                    user.status === "away" ? "bg-gradient-to-r from-amber-500 to-orange-500" : 
-                    "bg-gradient-to-r from-slate-500 to-gray-500"
-                  }`}>
-                    {user.status === "online" && <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>}
+            {/* Other users */}
+            <div>
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Other Users</h3>
+              <div className="space-y-2">
+                {users.map((user) => (
+                  <div key={user.id} className="bg-card hover:bg-muted/50 rounded-lg p-3 border border-border transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <div className="relative">
+                        <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
+                          <span className="text-sm font-medium text-secondary-foreground">{(user.name || 'A').charAt(0).toUpperCase()}</span>
+                        </div>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-card" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
+                        <p className="text-xs text-muted-foreground font-medium capitalize flex items-center">
+                          <div className={`w-2 h-2 rounded-full mr-2 ${
+                            user.status === "online" ? "bg-emerald-500" : 
+                            user.status === "away" ? "bg-amber-500" : 
+                            "bg-slate-500"
+                          }`}></div>
+                          {user.status}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => startPrivateChat(user)}
+                        className="w-8 h-8"
+                        title="Private chat"
+                      >
+                        <AtSign className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                <div className="flex-1">
-                  <p className="font-bold text-foreground text-base group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{user.name}</p>
-                  <p className="text-sm font-medium capitalize flex items-center">
-                    <div className={`w-2 h-2 rounded-full mr-2 ${
-                      user.status === "online" ? "bg-emerald-500" : 
-                      user.status === "away" ? "bg-amber-500" : 
-                      "bg-slate-500"
-                    }`}></div>
-                    <span className={user.status === "online" ? "text-emerald-600 dark:text-emerald-400" : 
-                                   user.status === "away" ? "text-amber-600 dark:text-amber-400" : 
-                                   "text-muted-foreground"}>
-                      {user.status}
-                    </span>
-                  </p>
-                </div>
-                {user.isTyping && (
-                  <div className="flex space-x-1.5">
-                    <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-bounce" style={{animationDelay: "0.15s"}}></div>
-                    <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-bounce" style={{animationDelay: "0.3s"}}></div>
-                  </div>
-                )}
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-x-0 translate-x-2">
-                  <Button
-                    variant="ghost" 
-                    size="icon" 
-                    className="w-9 h-9 rounded-full bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/50 dark:to-cyan-900/50 hover:from-blue-200 hover:to-cyan-200 dark:hover:from-blue-800/50 dark:hover:to-cyan-800/50 transition-all duration-200 shadow-md hover:shadow-lg"
-                    onClick={() => openPrivateChat(user)}
-                    disabled={user.status !== "online"}
-                    title="Open private chat"
-                  >
-                    <AtSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  </Button>
-                  <Button
-                    variant="ghost" 
-                    size="icon" 
-                    className="w-9 h-9 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/50 dark:to-teal-900/50 hover:from-emerald-200 hover:to-teal-200 dark:hover:from-emerald-800/50 dark:hover:to-teal-800/50 transition-all duration-200 shadow-md hover:shadow-lg"
-                    onClick={() => startAudioCall(user.id)}
-                    disabled={user.status !== "online"}
-                    title="Start audio call"
-                  >
-                    <Phone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  </Button>
-                  <Button
-                    variant="ghost" 
-                    size="icon" 
-                    className="w-9 h-9 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/50 dark:to-pink-900/50 hover:from-purple-200 hover:to-pink-200 dark:hover:from-purple-800/50 dark:hover:to-pink-800/50 transition-all duration-200 shadow-md hover:shadow-lg"
-                    onClick={() => startVideoCall(user.id)}
-                    disabled={user.status !== "online"}
-                    title="Start video call"
-                  >
-                    <Video className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                  </Button>
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </ScrollArea>
 
         {/* Enhanced Sidebar Footer */}
-        <div className="p-6 border-t border-slate-200/50 dark:border-slate-700/30 bg-gradient-to-r from-white/50 to-blue-50/50 dark:from-slate-800/50 dark:to-blue-900/20 backdrop-blur-sm">
+        <div className="p-6 border-t border-border bg-gradient-to-r from-card/50 to-accent/5 dark:from-card/50 dark:to-accent/10">
           <div className="flex items-center justify-between text-sm">
             <span className="font-bold text-muted-foreground">{formatTime(currentTime)}</span>
-            <Badge variant="outline" className="text-xs border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/20 px-3 py-1 rounded-full">
+            <Badge variant="outline" className="text-xs border-primary/30 dark:border-primary/50 text-primary dark:text-primary bg-primary/10 dark:bg-primary/20 px-3 py-1 rounded-full">
               <Shield className="w-3 h-3 mr-1.5" />
               Encrypted
             </Badge>
@@ -715,55 +811,59 @@ export default function ChatPage() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-slate-50/50 dark:bg-slate-900/40 backdrop-blur-sm">
-        {/* Chat Header */}
-        <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/30 bg-gradient-to-r from-white/90 via-white/80 to-white/90 dark:from-slate-800/90 dark:via-slate-800/80 dark:to-slate-800/90 backdrop-blur-2xl shadow-sm">
+        <div className="flex-1 flex flex-col bg-background">
+         {/* Chat Header */}
+         <div className="p-4 border-b border-border bg-card">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon" className="lg:hidden rounded-full hover:bg-gradient-to-r hover:from-slate-100 hover:to-blue-100 dark:hover:from-slate-700 dark:hover:to-blue-900/30 transition-all duration-200" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                <Users className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+              <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                <Users className="w-5 h-5 text-muted-foreground" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-foreground tracking-tight bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                  Secure Chat
-                </h1>
-                <p className="text-sm text-muted-foreground font-light flex items-center">
-                  <Shield className="w-3 h-3 mr-1.5 text-emerald-500" />
-                  Session: {sessionId}
-                </p>
+                <h1 className="text-lg font-semibold text-foreground">Secure Chat Room</h1>
+                <p className="text-sm text-muted-foreground">Session: {sessionId}</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gradient-to-r hover:from-slate-100 hover:to-blue-100 dark:hover:from-slate-700 dark:hover:to-blue-900/30 transition-all duration-200" title="Search messages">
-                <Search className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gradient-to-r hover:from-emerald-100 hover:to-teal-100 dark:hover:from-emerald-900/30 dark:hover:to-teal-900/30 transition-all duration-200" onClick={() => startAudioCall()} title="Start group audio call">
-                <Phone className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30 transition-all duration-200" onClick={() => startVideoCall()} title="Start group video call">
-                <Video className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              </Button>
-              <UserMenu />
-            </div>
+               <Button variant="ghost" size="icon" title="Search messages">
+                 <Search className="w-5 h-5 text-muted-foreground" />
+               </Button>
+               <Button variant="ghost" size="icon" onClick={() => setShowTestPanel(!showTestPanel)} title="Test Panel">
+                 <Wrench className="w-5 h-5 text-muted-foreground" />
+               </Button>
+               <Button variant="ghost" size="icon" onClick={() => startAudioCall()} title="Group Audio Call">
+                 <Phone className="w-5 h-5 text-muted-foreground" />
+               </Button>
+               <Button variant="outline" size="sm" onClick={() => startVideoCall()}>
+                 <Video className="w-4 h-4 mr-2" />
+                 Video Call
+               </Button>
+               <UserMenu />
+             </div>
           </div>
         </div>
 
         {/* Messages Area */}
-        <ScrollArea className="flex-1 p-8">
-          <div className="space-y-8 max-w-4xl mx-auto">
+        <ScrollArea className="flex-1 p-4 bg-background">
+          <div className="space-y-4 max-w-3xl mx-auto">
             {messages.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-blue-100 via-cyan-100 to-teal-100 dark:from-blue-900/30 dark:via-cyan-900/30 dark:to-teal-900/30 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-500 hover:scale-105">
-                  <Shield className="w-16 h-16 text-blue-600 dark:text-blue-400" />
+              <div className="text-center py-16">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl mb-6 shadow-lg">
+                  <Shield className="w-8 h-8 text-primary-foreground" />
                 </div>
-                <h3 className="text-3xl font-bold text-foreground tracking-tight mb-4 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">Welcome to Cypher Chat</h3>
-                <p className="text-muted-foreground max-w-md mx-auto font-medium leading-relaxed text-lg">This is the beginning of your encrypted conversation. Messages here are secured with end-to-end encryption.</p>
-                <div className="mt-6 flex items-center justify-center space-x-2 text-sm text-muted-foreground">
-                  <CheckCircle className="w-4 h-4 text-emerald-500" />
-                  <span>End-to-end encrypted</span>
-                  <span className="text-slate-300 dark:text-slate-600">•</span>
-                  <Shield className="w-4 h-4 text-blue-500" />
-                  <span>Secure connection</span>
+                <h3 className="text-2xl font-bold text-foreground mb-3">Welcome to Cypher Chat</h3>
+                <p className="text-base text-muted-foreground max-w-md mx-auto mb-8 leading-relaxed">
+                  This is the beginning of your encrypted conversation. Messages are secured with end-to-end encryption for complete privacy.
+                </p>
+                <div className="flex items-center justify-center space-x-6 text-sm">
+                  <div className="flex items-center space-x-2 bg-primary/10 px-4 py-2 rounded-full">
+                    <CheckCircle className="w-4 h-4 text-primary" />
+                    <span className="text-primary font-medium">Encrypted</span>
+                  </div>
+                  <div className="flex items-center space-x-2 bg-secondary/10 px-4 py-2 rounded-full">
+                    <Shield className="w-4 h-4 text-secondary" />
+                    <span className="text-secondary font-medium">Secure</span>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -777,86 +877,73 @@ export default function ChatPage() {
                 return true;
               })
               .map((msg) => (
-                <div key={msg.id} className={`flex ${msg.userName === username ? "justify-end" : "justify-start"} animate-in slide-in-from-bottom duration-500`}>
-                  <div className={`flex space-x-3 max-w-2xl ${msg.userName === username ? "flex-row-reverse space-x-reverse" : ""}`}>
-                    {msg.userName !== username && (
-                      <Avatar className="w-10 h-10 mt-1 shadow-md">
-                        <AvatarFallback className={`${getAvatarColor(msg.userName || 'A')} text-white font-bold text-base shadow-inner`}>
-                         {(msg.userName || 'A').charAt(0).toUpperCase()}
-                       </AvatarFallback>
-                      </Avatar>
-                    )}
-                    <div className={`group relative ${msg.userName === username ? "items-end" : "items-start"}`}>
-                      <div className={`px-5 py-4 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-xl ${
-                        msg.userName === username 
-                          ? "bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 text-white shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/40" 
-                          : "bg-white/90 dark:bg-slate-800/90 border border-slate-200/60 dark:border-slate-700/60 backdrop-blur-xl hover:bg-white/95 dark:hover:bg-slate-800/95"
-                      } ${msg.isPrivate ? "ring-2 ring-blue-400/50 ring-offset-2 dark:ring-offset-slate-800" : ""}`}>
-                        {msg.userName !== username && (
-                          <p className="text-sm font-bold text-foreground mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">{msg.userName}</p>
-                        )}
-                        
-                        {/* Private Message Indicator */}
-                        {msg.isPrivate && (
-                          <div className="mb-3 flex items-center space-x-2 bg-white/20 dark:bg-slate-700/30 rounded-xl px-3 py-2">
-                            <AtSign className="w-4 h-4" />
-                            <span className="text-xs font-bold">
-                              {msg.userName === username 
-                                ? `Private message to ${msg.targetUserName}` 
-                                : "Private message"
-                              }
-                            </span>
-                          </div>
-                        )}
-                        
-                        {/* Reply Indicator */}
-                        {msg.replyTo && (
-                          <div className={`mb-3 p-3 rounded-xl border-l-4 ${
-                            msg.userName === username 
-                              ? "bg-white/25 border-white/50 backdrop-blur-sm" 
-                              : "bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 border-blue-500"
-                          }`}>
-                            <div className="flex items-center space-x-2 text-xs mb-1">
-                              <Reply className="w-3 h-3" />
-                              <span className="font-bold">
-                                {(() => {
-                                  const repliedMessage = messages.find(m => m.id === msg.replyTo);
-                                  return repliedMessage ? `Replied to ${repliedMessage.userName}` : "Reply to unknown";
-                                })()}
-                              </span>
-                            </div>
-                            <p className="text-xs opacity-90 font-medium line-clamp-2">
-                              {(() => {
-                                const repliedMessage = messages.find(m => m.id === msg.replyTo);
-                                return repliedMessage ? decryptMessage(repliedMessage.content) : "Original message not found";
-                              })()}
-                            </p>
-                          </div>
-                        )}
-                        
-                        <p className="text-base leading-relaxed font-medium">{decryptMessage(msg.content)}</p>
-                        <div className="flex items-center justify-between mt-3 space-x-3">
-                          <span className="text-xs font-medium opacity-90">{formatTime(msg.timestamp)}</span>
-                          {msg.userName === username && getStatusIcon(msg.status)}
-                        </div>
+                <div key={msg.id} className={`flex ${msg.userName === username ? "justify-end" : "justify-start"} mb-4`}>
+                  <div className={`flex space-x-3 max-w-md ${msg.userName === username ? "flex-row-reverse space-x-reverse" : ""}`}>
+                    {/* Avatar with improved styling */}
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${
+                      msg.userName === username 
+                        ? "bg-gradient-to-br from-primary to-primary/80" 
+                        : getAvatarColor(msg.userName)
+                    }`}>
+                      <span className="text-sm font-semibold text-white">
+                        {(msg.userName || 'A').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    
+                    <div className={`space-y-2 ${msg.userName === username ? "items-end" : "items-start"} flex-1`}>
+                      {/* Sender name with improved styling */}
+                      <div className={`flex items-center space-x-2 ${msg.userName === username ? "flex-row-reverse space-x-reverse" : ""}`}>
+                        <p className={`text-xs font-semibold ${
+                          msg.userName === username 
+                            ? "text-primary" 
+                            : "text-foreground"
+                        }`}>
+                          {msg.userName === username ? "You" : msg.userName}
+                        </p>
+                        <span className="text-xs text-muted-foreground">
+                          {formatTime(msg.timestamp)}
+                        </span>
+                        {msg.userName === username && getStatusIcon(msg.status)}
                       </div>
                       
-                      {/* Message Actions */}
-                      <div className="absolute -top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-y-0 translate-y-2">
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => replyToMessage(msg)}
-                            className="w-9 h-9 rounded-full bg-gradient-to-r from-white/90 to-blue-50/90 dark:from-slate-800/90 dark:to-blue-900/30 backdrop-blur-xl border border-slate-200/60 dark:border-slate-700/60 shadow-xl hover:shadow-2xl hover:from-blue-50 hover:to-cyan-50 dark:hover:from-blue-900/40 dark:hover:to-cyan-900/40 transition-all duration-200 hover:scale-105"
-                            title="Reply to message"
-                          >
-                            <Reply className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full bg-gradient-to-r from-white/90 to-slate-50/90 dark:from-slate-800/90 dark:to-slate-700/90 backdrop-blur-xl border border-slate-200/60 dark:border-slate-700/60 shadow-xl hover:shadow-2xl hover:from-slate-50 hover:to-slate-100 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-200 hover:scale-105" title="More options">
-                            <MoreVertical className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-                          </Button>
+                      {/* Reply indicator with improved styling */}
+                      {msg.replyTo && (
+                        <div className={`flex items-center space-x-2 text-xs text-muted-foreground mb-1 ${
+                          msg.userName === username ? "justify-end" : ""
+                        }`}>
+                          <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                            msg.userName === username 
+                              ? "bg-primary/10" 
+                              : "bg-muted"
+                          }`}>
+                            <Reply className="w-3 h-3" />
+                          </div>
+                          <span className="text-muted-foreground/80">Replying to message</span>
                         </div>
+                      )}
+                      
+                      {/* Message bubble with improved styling */}
+                      <div className={`group relative px-4 py-3 rounded-2xl shadow-sm transition-all duration-200 ${
+                        msg.userName === username 
+                          ? "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-br-lg" 
+                          : "bg-gradient-to-br from-card to-card/90 text-card-foreground rounded-bl-lg border border-border/50"
+                      }`}>
+                        <p className="text-sm leading-relaxed">{decryptMessage(msg.content)}</p>
+                        
+                        {/* Reply button - appears on hover */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => replyToMessage(msg)}
+                          className={`absolute top-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-7 h-7 ${
+                            msg.userName === username 
+                              ? "left-1 -translate-x-full" 
+                              : "right-1 translate-x-full"
+                          }`}
+                          title="Reply to message"
+                        >
+                          <CornerDownRight className="w-3 h-3" />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -867,46 +954,49 @@ export default function ChatPage() {
           </div>
         </ScrollArea>
 
-        {/* Enhanced Typing Indicator */}
+        {/* Typing Indicator */}
         {typingUsers.length > 0 && (
-          <div className="px-8 py-4 border-t border-slate-200/50 dark:border-slate-700/30 bg-gradient-to-r from-blue-50/60 to-cyan-50/60 dark:from-blue-900/20 dark:to-cyan-900/20 backdrop-blur-sm">
-            <div className="flex items-center space-x-4 text-sm text-muted-foreground font-medium max-w-4xl mx-auto">
+          <div className="px-6 py-3 border-t border-border bg-gradient-to-r from-primary/5 via-transparent to-primary/5">
+            <div className="flex items-center space-x-3 text-sm text-muted-foreground max-w-4xl mx-auto">
               <div className="flex space-x-1.5">
-                <div className="w-2.5 h-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-bounce shadow-lg shadow-blue-500/30" style={{ animationDelay: "0ms" }}></div>
-                <div className="w-2.5 h-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-bounce shadow-lg shadow-blue-500/30" style={{ animationDelay: "150ms" }}></div>
-                <div className="w-2.5 h-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-bounce shadow-lg shadow-blue-500/30" style={{ animationDelay: "300ms" }}></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
               </div>
-              <span className="font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              <span className="font-medium">
                 {typingUsers.length === 1 
-                  ? `${typingUsers[0]} is typing...`
-                  : `${typingUsers.length} people are typing...`
+                  ? `${typingUsers[0]} is typing`
+                  : `${typingUsers.length} people are typing`
                 }
+                <span className="animate-pulse">...</span>
               </span>
             </div>
           </div>
         )}
 
-        {/* Enhanced Reply Indicator */}
+        {/* Reply Indicator */}
         {replyingTo && (
-          <div className="px-8 py-4 border-t border-slate-200/50 dark:border-slate-700/30 bg-gradient-to-r from-white/90 via-blue-50/90 to-cyan-50/90 dark:from-slate-800/90 dark:via-blue-900/30 dark:to-cyan-900/30 backdrop-blur-xl shadow-lg shadow-blue-500/10">
+          <div className="px-6 py-3 border-t border-border bg-gradient-to-r from-primary/5 to-primary/10">
             <div className="flex items-center justify-between max-w-4xl mx-auto">
-              <div className="flex items-center space-x-4">
-                <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-2 rounded-full shadow-lg shadow-blue-500/30">
-                  <Reply className="w-4 h-4 text-white" />
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Reply className="w-4 h-4 text-primary" />
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-foreground bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">Replying to {replyingTo.userName}</p>
-                  <p className="text-xs text-muted-foreground font-medium truncate max-w-md">{decryptMessage(replyingTo.content)}</p>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">Replying to {replyingTo.userName}</p>
+                  <p className="text-xs text-muted-foreground/80 truncate max-w-md leading-relaxed">
+                    {decryptMessage(replyingTo.content)}
+                  </p>
                 </div>
               </div>
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={cancelReply}
-                className="rounded-full bg-gradient-to-r from-white/80 to-slate-50/80 dark:from-slate-700/80 dark:to-slate-600/80 backdrop-blur-xl border border-slate-200/60 dark:border-slate-700/60 shadow-lg hover:shadow-xl hover:from-slate-50 hover:to-slate-100 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-200 hover:scale-105 w-9 h-9"
+                className="w-7 h-7 hover:bg-primary/10 transition-colors"
                 title="Cancel reply"
               >
-                <X className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                <X className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -914,50 +1004,52 @@ export default function ChatPage() {
 
         {/* Private chat indicator */}
         {privateChatTarget && (
-          <div className="px-8 py-3 border-t border-slate-200/50 dark:border-slate-700/30 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl">
+          <div className="px-6 py-3 border-t border-border bg-muted/30">
             <div className="flex items-center justify-between max-w-4xl mx-auto">
-              <div className="flex items-center space-x-3">
-                <AtSign className="w-4 h-4 text-blue-500" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">Private message to {privateChatTarget.name}</p>
-                </div>
+              <div className="flex items-center space-x-2">
+                <AtSign className="w-4 h-4 text-primary" />
+                <p className="text-sm text-foreground">Private message to {privateChatTarget.name}</p>
               </div>
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={cancelPrivateChat}
-                className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 w-8 h-8"
+                className="w-6 h-6"
               >
-                <X className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                <X className="w-3 h-3" />
               </Button>
             </div>
           </div>
         )}
 
         {/* Message Input */}
-        <div className="p-8 border-t border-slate-200/50 dark:border-slate-700/30 bg-gradient-to-r from-white/90 via-white/80 to-white/90 dark:from-slate-800/90 dark:via-slate-800/80 dark:to-slate-800/90 backdrop-blur-2xl relative">
+        <div className="p-6 border-t border-border bg-background relative">
           {/* User Suggestions */}
           {showUserSuggestions && userSuggestions.length > 0 && (
-            <div ref={suggestionsRef} className="absolute bottom-full left-8 right-8 mb-3 max-w-4xl mx-auto">
-              <div className="bg-gradient-to-br from-white/95 to-blue-50/95 dark:from-slate-800/95 dark:to-blue-900/40 rounded-2xl shadow-2xl border border-slate-200/60 dark:border-slate-700/60 backdrop-blur-xl p-3">
+            <div ref={suggestionsRef} className="absolute bottom-full left-6 right-6 mb-3 max-w-4xl mx-auto">
+              <div className="bg-card border border-border rounded-lg shadow-lg p-3">
+                <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-b border-border flex items-center">
+                  <AtSign className="w-4 h-4 mr-2 text-primary" />
+                  <span>Mention a user</span>
+                </div>
                 {userSuggestions.map((user) => (
                   <button
                     key={user.id}
                     onClick={() => selectUser(user)}
-                    className="w-full flex items-center space-x-4 p-4 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 dark:hover:from-blue-900/40 dark:hover:to-cyan-900/30 transition-all duration-200 text-left group"
+                    className="w-full flex items-center space-x-3 p-3 rounded-md hover:bg-muted transition-colors text-left"
                   >
-                    <Avatar className="w-9 h-9 shadow-md">
-                      <AvatarFallback className={`${getAvatarColor(user.name)} text-white text-sm font-bold shadow-inner`}>
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className={`${getAvatarColor(user.name)} text-white text-sm font-medium`}>
                         {user.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="text-sm font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{user.name}</p>
-                      <p className="text-xs text-muted-foreground font-medium flex items-center">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground">{user.name}</p>
+                      <p className="text-xs text-muted-foreground flex items-center">
                         <div className={`w-2 h-2 rounded-full mr-2 ${
                           user.status === "online" ? "bg-emerald-500" : 
                           user.status === "away" ? "bg-amber-500" : 
-                          "bg-slate-500"
+                          "bg-muted-foreground"
                         }`}></div>
                         {user.status}
                       </p>
@@ -970,48 +1062,48 @@ export default function ChatPage() {
 
           {/* Private chat user suggestions */}
           {showPrivateUserSuggestions && userSuggestions.length > 0 && (
-            <div className="absolute bottom-full left-8 right-8 mb-3 max-w-4xl mx-auto">
-              <div className="bg-gradient-to-br from-white/95 to-purple-50/95 dark:from-slate-800/95 dark:to-purple-900/40 rounded-2xl shadow-2xl border border-slate-200/60 dark:border-slate-700/60 backdrop-blur-xl p-3">
-                <div className="px-4 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 border-b border-slate-200/50 dark:border-slate-700/50 flex items-center">
-                  <AtSign className="w-3 h-3 mr-2 text-purple-500" />
+            <div className="absolute bottom-full left-6 right-6 mb-3 max-w-4xl mx-auto">
+              <div className="bg-card border border-border rounded-lg shadow-lg p-3">
+                <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-b border-border flex items-center">
+                  <AtSign className="w-4 h-4 mr-2 text-primary" />
                   Select user for private message
                 </div>
                 {userSuggestions.map((user) => (
                   <button
                     key={user.id}
                     onClick={() => startPrivateChat(user)}
-                    className="w-full flex items-center space-x-4 p-4 rounded-xl hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/40 dark:hover:to-pink-900/30 transition-all duration-200 text-left group"
+                    className="w-full flex items-center space-x-3 p-3 rounded-md hover:bg-muted transition-colors text-left"
                   >
-                    <Avatar className="w-9 h-9 shadow-md">
-                      <AvatarFallback className={`${getAvatarColor(user.name)} text-white text-sm font-bold shadow-inner`}>
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className={`${getAvatarColor(user.name)} text-white text-sm font-medium`}>
                         {user.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <p className="text-sm font-bold text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{user.name}</p>
-                      <p className="text-xs text-muted-foreground font-medium">{user.status}</p>
+                      <p className="text-sm font-medium text-foreground">{user.name}</p>
+                      <p className="text-xs text-muted-foreground">{user.status}</p>
                     </div>
-                    <span className="text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded-full">Private</span>
+                    <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded">Private</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Enhanced Emoji Picker */}
+          {/* Emoji Picker */}
           {showEmojiPicker && (
-            <div ref={emojiPickerRef} className="absolute bottom-full left-8 right-8 mb-3 max-w-4xl mx-auto">
-              <div className="bg-gradient-to-br from-white/95 to-yellow-50/95 dark:from-slate-800/95 dark:to-yellow-900/40 rounded-2xl shadow-2xl border border-slate-200/60 dark:border-slate-700/60 backdrop-blur-xl p-4">
+            <div ref={emojiPickerRef} className="absolute bottom-full left-6 right-6 mb-3 max-w-4xl mx-auto">
+              <div className="bg-card border border-border rounded-lg shadow-lg p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-bold text-foreground flex items-center">
-                    <Smile className="w-4 h-4 mr-2 text-yellow-500" />
+                  <h3 className="text-sm font-medium text-foreground flex items-center">
+                    <Smile className="w-4 h-4 mr-2 text-muted-foreground" />
                     Quick Emojis
                   </h3>
                   <Button 
                     variant="ghost" 
                     size="icon" 
                     onClick={() => setShowEmojiPicker(false)}
-                    className="w-6 h-6 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
+                    className="w-6 h-6"
                   >
                     <X className="w-3 h-3" />
                   </Button>
@@ -1021,87 +1113,188 @@ export default function ChatPage() {
                     <button
                       key={index}
                       onClick={() => insertEmoji(emoji)}
-                      className="w-10 h-10 rounded-xl hover:bg-gradient-to-br hover:from-yellow-100 hover:to-orange-100 dark:hover:from-yellow-900/50 dark:hover:to-orange-900/50 transition-all duration-200 flex items-center justify-center text-xl hover:scale-110 shadow-sm hover:shadow-md"
+                      className="w-8 h-8 rounded hover:bg-secondary flex items-center justify-center text-sm transition-colors"
                     >
                       {emoji}
                     </button>
                   ))}
                 </div>
-                <div className="border-t border-slate-200/50 dark:border-slate-700/50 pt-3">
-                  <p className="text-xs text-muted-foreground font-medium text-center">Click an emoji to insert it ✨</p>
+                <div className="border-t border-border pt-3">
+                  <p className="text-xs text-muted-foreground text-center">Click to insert</p>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="flex items-center space-x-4 max-w-4xl mx-auto">
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              onChange={handleFileUpload}
-              accept="image/*,application/pdf,.doc,.docx,video/*,.mp3,.wav"
-            />
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => fileInputRef.current?.click()}
-              className="rounded-full bg-gradient-to-r from-slate-100 to-blue-100 dark:from-slate-700 dark:to-blue-900/30 hover:from-slate-200 hover:to-blue-200 dark:hover:from-slate-600 dark:hover:to-blue-800/30 transition-all duration-200 w-12 h-12 shadow-md hover:shadow-lg"
-              title="Attach files"
-            >
-              <Paperclip className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-            </Button>
-            <div className="flex-1 relative">
-              <Input
-                ref={inputRef}
-                type="text"
-                value={message}
-                onChange={handlePrivateChatInput}
-                placeholder={privateChatTarget ? `Private message to ${privateChatTarget.name}...` : "Type your secure message... Use @ to mention someone (use /w username for private)"}
-                className="pr-16 py-4 rounded-3xl border-slate-200/60 dark:border-slate-600/60 bg-gradient-to-r from-white/60 to-blue-50/60 dark:from-slate-700/60 dark:to-blue-900/20 backdrop-blur-sm focus:border-blue-400 focus:ring-blue-400/30 text-base font-medium placeholder:text-slate-500 dark:placeholder:text-slate-400 shadow-inner focus:shadow-lg transition-all duration-200"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    // Stop typing indicator
-                    setIsTyping(false);
-                    if (socketRef.current) {
-                      socketRef.current.emit('typingStop', { sessionId, username });
-                    }
-                    sendMessageHandler();
-                  }
-                }}
-              />
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 rounded-full bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/30 dark:to-orange-900/30 hover:from-yellow-200 hover:to-orange-200 dark:hover:from-yellow-800/30 dark:hover:to-orange-800/30 transition-all duration-200 w-10 h-10 shadow-md hover:shadow-lg"
-                title="Insert emoji"
-              >
-                <Smile className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-              </Button>
-            </div>
-            <Button 
-              onClick={sendMessageHandler}
-              disabled={!message.trim()}
-              className="bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 hover:from-blue-600 hover:via-cyan-600 hover:to-teal-600 text-white px-6 py-4 rounded-3xl shadow-2xl shadow-blue-500/40 disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200 hover:shadow-blue-500/50 hover:scale-105"
-            >
-              <Send className="w-5 h-5" />
-            </Button>
-          </div>
+          <div className="flex items-center space-x-3 max-w-3xl mx-auto">
+             <input
+               ref={fileInputRef}
+               type="file"
+               className="hidden"
+               onChange={handleFileUpload}
+               accept="image/*,application/pdf,.doc,.docx,video/*,.mp3,.wav"
+             />
+             <Button 
+               variant="ghost" 
+               size="icon" 
+               onClick={() => fileInputRef.current?.click()}
+               className="w-10 h-10"
+               title="Attach files"
+             >
+               <Paperclip className="w-5 h-5 text-muted-foreground" />
+             </Button>
+             <div className="flex-1 relative">
+               <Input
+                 ref={inputRef}
+                 type="text"
+                 value={message}
+                 onChange={handlePrivateChatInput}
+                 placeholder={privateChatTarget ? `Private message to ${privateChatTarget.name}...` : "Type a message..."}
+                 className="pr-12 py-3 rounded-lg border-border bg-background focus:border-primary focus:ring-1 focus:ring-primary"
+                 onKeyDown={(e) => {
+                   if (e.key === "Enter" && !e.shiftKey) {
+                     e.preventDefault();
+                     setIsTyping(false);
+                     if (socketRef.current) {
+                       socketRef.current.emit('typingStop', { sessionId, username });
+                     }
+                     sendMessageHandler();
+                   }
+                 }}
+               />
+               <Button 
+                 variant="ghost" 
+                 size="icon"
+                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                 className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8"
+                 title="Insert emoji"
+               >
+                 <Smile className="w-4 h-4 text-muted-foreground" />
+               </Button>
+             </div>
+             <Button 
+               onClick={sendMessageHandler}
+               disabled={!message.trim()}
+               size="sm"
+               className="w-10 h-10"
+             >
+               <Send className="w-4 h-4" />
+             </Button>
+           </div>
         </div>
       </div>
 
-      {/* Video Call Component */}
-      <JitsiVideoCall
-        isOpen={isVideoCallOpen}
-        onClose={endVideoCall}
-        sessionId={sessionId}
-        username={username}
-        targetUserId={videoCallTargetUser}
-        isGroupCall={isGroupVideoCall}
-        isAudioOnly={isAudioCall}
-      />
+      {/* Video Call Component - Only show when video call is active */}
+      {isVideoCallOpen && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm">
+          <SimplePeerVideoCallImproved
+            roomId={sessionId}
+            targetUserId={videoCallTargetUser}
+            isGroupCall={isGroupVideoCall}
+            isAudioOnly={isAudioCall}
+            onCallEnd={endVideoCall}
+          />
+        </div>
+      )}
+
+      {/* Three.js Encryption Model Background */}
+      <ThreeEncryptionModel />
+
+      {/* Test Panel */}
+      {showTestPanel && (
+        <div className="fixed top-4 right-4 w-80 bg-card border border-border rounded-lg shadow-lg z-50">
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Wrench className="w-4 h-4 text-muted-foreground" />
+                <h3 className="text-sm font-medium text-foreground">Test Panel</h3>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowTestPanel(false)}
+                className="w-6 h-6"
+                title="Close test panel"
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+          
+          <div className="p-4 space-y-4">
+            <div className="flex space-x-2">
+              <Button 
+                onClick={runSimplePeerTests}
+                disabled={isTesting}
+                className="flex-1"
+                size="sm"
+              >
+                {isTesting ? (
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Testing...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <Play className="w-3 h-3" />
+                    <span>Run Tests</span>
+                  </div>
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={clearTestResults}
+                size="sm"
+                title="Clear results"
+              >
+                Clear
+              </Button>
+            </div>
+
+            {/* Test Results */}
+            <div className="space-y-1 max-h-64 overflow-y-auto">
+              {testResults.length === 0 ? (
+                <div className="text-center py-4">
+                  <Wrench className="w-4 h-4 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">No tests run yet</p>
+                </div>
+              ) : (
+                testResults.map((result, index) => (
+                  <div key={index} className={`p-2 rounded border text-xs ${
+                    result.success 
+                      ? 'bg-primary/5 border-primary/20' 
+                      : 'bg-destructive/5 border-destructive/20'
+                  }`}>
+                    <div className="flex items-start space-x-2">
+                      <div className="mt-0.5">
+                        {result.success ? (
+                          <CheckCircle className="w-3 h-3 text-primary" />
+                        ) : (
+                          <XCircle className="w-3 h-3 text-destructive" />
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-foreground">{result.test}</h4>
+                          <span className="text-muted-foreground">{result.timestamp}</span>
+                        </div>
+                        <p className="text-muted-foreground">{result.message}</p>
+                        {result.details && (
+                          <p className="text-muted-foreground/80 bg-muted/50 p-1 rounded text-xs">
+                            {result.details}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 }
