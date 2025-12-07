@@ -1,4 +1,4 @@
-# 💬 Cypher Chat v2: Cypher & Real-time Communication
+# 💬 Secure chatv2: Cypher & Real-time Communication
 
 Cypher Chat v2 is a modern, real-time chat application designed for cypher and private communication, built with a robust TypeScript backend and a dynamic JavaScript/HTML/CSS frontend.
 
@@ -11,7 +11,7 @@ Cypher Chat v2 is a modern, real-time chat application designed for cypher and p
 
 ---
 
-![Cypher Chat Application Preview](/preview_example.png)
+![Secure Chat Application Preview](/preview_example.png)
 _A glimpse of the Cypher Chat user interface._
 
 
